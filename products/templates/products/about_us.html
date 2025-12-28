@@ -1,0 +1,177 @@
+{% extends "products/base.html" %}
+{% load static %}
+
+{% block title %}ABOUT US | TR Clothing Store{% endblock %}
+
+{% block content %}
+<style>
+    /* =========================================
+       [ABOUT US] Image + Text Layout
+       ========================================= */
+    
+    body { background-color: #f9f9f9; color: #333; }
+    .about-section { padding: 100px 0; position: relative; }
+    
+    /* 폰트 설정 */
+    .font-heavy { font-family: 'GmarketSansBold', serif; text-transform: uppercase; letter-spacing: 1px; }
+    .highlight-orange { color: #ff6b00; }
+
+    /* --- [HERO 섹션] 좌측 이미지 + 우측 텍스트 --- */
+    .about-hero-wrapper {
+        display: flex;
+        align-items: center;
+        min-height: 60vh; /* 높이 설정 */
+        background-color: #fff;
+        border-bottom: 1px solid #eee;
+        overflow: hidden;
+    }
+
+    /* 좌측 이미지 영역 */
+    .hero-image-col {
+        flex: 1; /* 공간 50% 차지 */
+        height: 60vh; /* 높이 꽉 채우기 */
+        background-image: url('{% static "img/aboutus.png" %}'); /* 이미지 경로 수정 */
+        background-size: cover;
+        background-position: center;
+        /* 이미지가 없을 때를 대비한 배경색 */
+        background-color: #f0f0f0; 
+    }
+
+    /* 우측 텍스트 영역 */
+    .hero-text-col {
+        flex: 1; /* 공간 50% 차지 */
+        padding: 60px;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        text-align: left; /* 왼쪽 정렬 */
+    }
+
+    .hero-text-col h1 { 
+        font-size: 3.5rem; margin-bottom: 20px; color: #222; text-shadow: none; 
+        line-height: 1.2;
+    }
+    .hero-text-col .lead { 
+        font-size: 1.2rem; color: #666; line-height: 1.6; max-width: 500px;
+    }
+
+    /* --- [VISION 섹션] --- */
+    .vision-box {
+        background: #ffffff; 
+        box-shadow: 0 15px 40px rgba(0,0,0,0.05); 
+        border: 1px solid #eee;
+        padding: 80px 60px;
+        border-radius: 20px;
+        margin-top: 20px;
+    }
+    .vision-box hr { border-color: #ddd !important; opacity: 0.5; }
+
+    /* --- [WHY TR 섹션] --- */
+    .strength-card {
+        background: #ffffff;
+        border: 1px solid #eee; padding: 50px 30px;
+        transition: transform 0.3s, box-shadow 0.3s;
+        height: 100%; text-align: center; border-radius: 15px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+    }
+    .strength-card:hover {
+        transform: translateY(-10px);
+        border-color: #ff6b00;
+        box-shadow: 0 20px 40px rgba(255, 107, 0, 0.15);
+    }
+    .strength-icon { font-size: 3.5rem; color: #ff6b00; margin-bottom: 25px; }
+    .strength-card h3 { color: #222; }
+    .strength-card p { color: #777 !important; }
+
+    /* 모바일 대응 (반응형) */
+    @media (max-width: 992px) {
+        .about-hero-wrapper { flex-direction: column; height: auto; }
+        .hero-image-col { width: 100%; height: 400px; } /* 모바일에서 이미지 높이 */
+        .hero-text-col { width: 100%; padding: 40px 20px; text-align: center; align-items: center; }
+        .hero-text-col h1 { font-size: 2.5rem; }
+    }
+</style>
+
+<div class="about-hero-wrapper">
+    <div class="hero-image-col"></div>
+    
+    <div class="hero-text-col">
+        <h1 class="font-heavy">
+            다양한 <span class="highlight-orange">우리를</span> 위하여
+        </h1>
+        <p class="lead">
+            혼자 보단 친구와, 두 명 보단 단체가.<br>
+            최고의 움직임을 위한 최적의 유니폼을 만듭니다.
+        </p>
+    </div>
+</div>
+
+<div class="container">
+    
+    <div class="about-section">
+        <div class="row justify-content-center">
+            <div class="col-lg-10">
+                <div class="vision-box text-center">
+                    <h2 class="font-heavy mb-4">OUR <span class="highlight-orange">VISION</span></h2>
+                    <p class="lead mb-4" style="font-size: 1.2rem; color: #444; line-height: 1.8;">
+                        세모단은 단순한 의류 제조업체가 아닙니다.<br>
+                        여러분의 <span style="color:#ff6b00; font-weight:bold;">팀 정체성</span>을 <br>
+                        가장 빠르고 편리하게 구현하는 <strong><span style="color:#ff6b00;">방법</span></strong>입니다.
+                    </p>
+                    <hr style="width: 50%; margin: 40px auto;">
+                    <h3 class="h5 font-heavy" style="color: #333;">"No Login, Just Create"</h3>
+                    <h4 class="h5 font-heavy" style="color: #555; margin-top: 10px;">"로그인 없이, 만드세요"</h4>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="about-section">
+        <h2 class="font-heavy text-center mb-5" style="font-size: 2.5rem; color: #222;">
+            WHY <span class="highlight-orange">US</span>?
+        </h2>
+        
+        <div class="row g-4">
+            <div class="col-md-4">
+                <div class="strength-card">
+                    <i class="fas fa-bolt strength-icon"></i>
+                    <h3 class="h4 font-weight-bold mb-3">Instant Quote</h3>
+                    <p>
+                        로그인 없이 3초 만에<br>
+                        실시간 견적 확인 가능
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="strength-card">
+                    <i class="fas fa-tshirt strength-icon"></i> 
+                    <h3 class="h4 font-weight-bold mb-3">Premium Quality</h3>
+                    <p>
+                        일상복으로도 손색없는<br>
+                        최고급 원단과 핏
+                    </p>
+                </div>
+            </div>
+
+            <div class="col-md-4">
+                <div class="strength-card">
+                    <i class="fas fa-users strength-icon"></i> 
+                    <h3 class="h4 font-weight-bold mb-3">Team Spirit</h3>
+                    <p>
+                        팀의 결속력을 높여주는<br>
+                        완벽한 디자인 구현
+                    </p>
+                </div>
+            </div>
+        </div>
+
+        <div class="text-center mt-5 pt-5">
+            <a href="{% url 'account_signup' %}" class="btn btn-lg btn-outline-dark rounded-pill px-5 py-3 fw-bold" style="border-width: 2px;">
+                우리와 함께 시작하기 &nbsp; <i class="fas fa-arrow-right"></i>
+            </a>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

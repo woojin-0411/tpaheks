@@ -1,0 +1,100 @@
+{% load static %}
+{% load socialaccount %}
+
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TR Clothing Store{% endblock %}</title>
+
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    
+    <link rel="stylesheet" href="{% static 'style.css' %}"> 
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Holtwood+One+SC&display=swap" rel="stylesheet">
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body style="scroll-behavior: smooth;">
+
+    <nav class="navbar navbar-expand-lg navbar-light fixed-top">
+        <div class="container-fluid position-relative"> 
+            
+            <a class="navbar-brand custom-logo" href="{% url 'products:index' %}"> 
+                <span class="emphasize">세</span>상의&nbsp;<span class="emphasize">모</span>든&nbsp;<span class="emphasize">단</span>체복
+            </a>
+
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#mainNavbar" aria-controls="mainNavbar" aria-expanded="false" aria-label="Toggle navigation">
+                <span></span>
+                <span></span>
+                <span></span>
+            </button>
+
+            <div class="collapse navbar-collapse" id="mainNavbar">
+                
+                <ul class="navbar-nav menu-center"> 
+                    
+                    {% url 'products:index' as home_url %}
+                    {% url 'products:about_us' as about_url %}
+                    {% url 'products:shop' as shop_url %}
+                    {% url 'products:qna' as qna_url %}
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == home_url %}active{% endif %}" href="{{ home_url }}">HOME</a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == about_url %}active{% endif %}" href="{{ about_url }}">ABOUT US</a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == shop_url %}active{% endif %}" href="{{ shop_url }}">SHOP</a>
+                    </li>
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == qna_url %}active{% endif %}" href="{{ qna_url }}">Q&A</a>
+                    </li>
+                </ul>
+
+                <div class="d-flex align-items-center ms-auto">
+                    {% if user.is_authenticated %}
+                        <span class="me-3" style="font-weight:bold; color:#fff;">
+                            {{ user.username }}님
+                        </span>
+                        <form method="post" action="{% url 'account_logout' %}" style="display:inline;">
+                            {% csrf_token %}
+                            <button type="submit" class="btn btn-link text-decoration-none" style="color:#ddd; font-size:0.9rem;">
+                                로그아웃
+                            </button>
+                        </form>
+                    {% else %}
+                    {% endif %}
+                </div>
+
+            </div>
+        </div>
+    </nav>
+
+    <main>
+        {% block content %}
+        {% endblock %}
+    </main>
+    
+    <a href="http://pf.kakao.com/_ugkxkn/chat" class="position-fixed end-0 bottom-0 mb-4 me-4 kakao-chat-button" target="_blank" title="카카오톡 오픈채팅 연결">
+        <i class="fas fa-comment-dots"></i>
+        <span class="ms-2 d-none d-sm-inline-block kakao-chat-text">문의+</span>
+    </a>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    
+    {% block extra_js %}
+    {% endblock %}
+
+</body>
+</html>
