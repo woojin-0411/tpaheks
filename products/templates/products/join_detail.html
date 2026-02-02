@@ -25,7 +25,7 @@
         {% for ans in post.answers.all %}
             <div class="d-flex mb-3"><div class="me-3"><span class="badge bg-primary">관리자</span></div><div><p class="mb-1 fw-bold" style="white-space: pre-line;">{{ ans.content }}</p><small class="text-muted">{{ ans.created_at|date:"Y.m.d H:i" }}</small></div></div><hr class="text-muted">
         {% empty %}<p class="text-muted text-center py-3">답변이 없습니다.</p>{% endfor %}
-        <form method="post" action="{% url 'products:qna_answer_create' post.pk %}" class="mt-4">
+        <form method="post" action="{% url 'products:join_answer_create' post.pk %}" class="mt-4">
             {% csrf_token %}
             <div class="input-group">
                 <input type="password" name="admin_code" class="form-control" placeholder="관리자 코드 (4678)" style="max-width: 150px;" required>
@@ -35,6 +35,6 @@
         </form>
     </div>
     <div class="text-center"><a href="{% url 'products:qna' %}" class="btn btn-outline-secondary px-5">목록</a></div>
-    <div class="modal fade" id="delModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">삭제</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><form method="post" action="{% url 'products:qna_action' post.pk %}">{% csrf_token %}<div class="modal-body"><p>관리자 코드를 입력하세요.</p><input type="password" name="admin_code" class="form-control text-center" required><input type="hidden" name="action_type" value="delete"></div><div class="modal-footer"><button type="submit" class="btn btn-danger">삭제</button></div></form></div></div></div>
+    <div class="modal fade" id="delModal" tabindex="-1"><div class="modal-dialog modal-dialog-centered"><div class="modal-content"><div class="modal-header"><h5 class="modal-title">삭제</h5><button class="btn-close" data-bs-dismiss="modal"></button></div><form method="post" action="{% url 'products:join_action' post.pk %}">{% csrf_token %}<div class="modal-body"><p>관리자 코드를 입력하세요.</p><input type="password" name="admin_code" class="form-control text-center" required><input type="hidden" name="action_type" value="delete"></div><div class="modal-footer"><button type="submit" class="btn btn-danger">삭제</button></div></form></div></div></div>
 </div>
 {% endblock %}

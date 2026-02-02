@@ -14,9 +14,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = 'django-insecure-3x8w-r_8^p3@h8s!$p*d+p-e^y-e^w-g-^e^y-e^w-g' 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['3.37.205.155', '127.0.0.1', 'localhost']
 
 # Application definition
 # ----------------------------------------------------------------------
@@ -37,7 +37,9 @@ INSTALLED_APPS = [
     'allauth.account',
     'allauth.socialaccount',
     
-    # --- 카카오 소셜 로그인 앱 ---
+    # ★ 소셜 로그인 제공자 추가
+    'allauth.socialaccount.providers.google',
+    'allauth.socialaccount.providers.naver',
     'allauth.socialaccount.providers.kakao',
     
     # --- Django Humanize: {{ price|intcomma }} 사용을 위해 필수 ---
@@ -66,7 +68,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         # [수정] 아래 줄을 이렇게 바꾸세요 (템플릿 폴더를 명시)
-        'DIRS': [os.path.join(BASE_DIR, 'products', 'templates')], 
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -182,11 +184,30 @@ EMAIL_HOST_PASSWORD = '3VBYVSVM1D9R'
 
 SITE_ID = 1
 
-
-# [기존에 추가했던 MEDIA 설정 아래에 추가하세요]
-STATIC_URL = 'static/'
-
-# 배포 시 Django가 모든 static 파일을 모아둘 위치 (개발 단계에서는 주석 처리)
-
 # [추가] collectstatic 명령어를 위한 경로 설정
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
+
+# 인증 백엔드 설정
+AUTHENTICATION_BACKENDS = [
+    'django.contrib.auth.backends.ModelBackend', # 일반 로그인
+    'allauth.account.auth_backends.AuthenticationBackend', # 소셜 로그인
+]
+
+# 로그인 후 이동할 페이지
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/'
+
+# 이메일 인증 설정 (선택사항: 'mandatory'로 하면 이메일 인증 필수)
+ACCOUNT_EMAIL_VERIFICATION = 'none'
+
+ACCOUNT_FORMS = {
+    'signup': 'products.forms.CustomSignupForm',
+}
+
+# 회원가입 시 커스텀 폼 사용 설정
+ACCOUNT_FORMS = {'signup': 'products.forms.CustomSignupForm'}
+
+ACCOUNT_AUTHENTICATION_METHOD = 'username' 
+ACCOUNT_EMAIL_REQUIRED = False
+
+DATA_UPLOAD_MAX_MEMORY_SIZE = 10485760

@@ -1,0 +1,75 @@
+{% extends "products/base.html" %}
+
+{% block title %}이용약관 및 개인정보처리방침 | 세모단{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <h2 class="fw-bold mb-5 font-heavy text-center">약관 및 정책</h2>
+            
+            <div class="card border-0 shadow-sm mb-5">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold text-orange mb-3 border-bottom pb-2">이용약관 및 환불규정</h4>
+                    
+                    <h5 class="fw-bold mt-4">제1조 (교환 및 환불 규정)</h5>
+                    <p class="text-secondary small">
+                        1. <strong>주문 제작 상품의 특성상</strong>, 제작이 시작된 이후(결제완료 후 제작 중 단계)에는 단순 변심으로 인한 교환 및 환불이 불가능합니다.<br>
+                        2. 단, 상품 자체에 하자가 있거나 주문 내용과 다른 상품이 배송된 경우, 수령 후 7일 이내에 교환 및 환불이 가능합니다.<br>
+                        3. 시안 확정 후 발생한 오타나 디자인 오류에 대해서는 책임지지 않습니다. 최종 시안을 신중하게 확인해 주세요.
+                    </p>
+
+                    <h5 class="fw-bold mt-4">제2조 (주문 취소)</h5>
+                    <p class="text-secondary small">
+                        1. [견적요청], [결제요청] 단계에서는 언제든지 주문 취소가 가능합니다.<br>
+                        2. [결제완료] 단계라도 제작이 시작되기 전이라면 고객센터를 통해 취소가 가능합니다.<br>
+                        3. 이미 원단 재단 및 인쇄가 진행된 경우 취소가 불가능합니다.
+                    </p>
+                </div>
+            </div>
+
+            <div id="privacy" class="card border-0 shadow-sm mb-4">
+                <div class="card-body p-4">
+                    <h4 class="fw-bold text-orange mb-3 border-bottom pb-2">개인정보처리방침</h4>
+                    
+                    <p class="text-secondary small">
+                        <strong>세모단(이하 '회사')은 개인정보 보호법 제30조에 따라 정보주체의 개인정보를 보호하고 이와 관련한 고충을 신속하고 원활하게 처리할 수 있도록 하기 위하여 다음과 같이 개인정보 처리지침을 수립·공개합니다.</strong>
+                    </p>
+
+                    <h5 class="fw-bold mt-4">1. 수집하는 개인정보 항목</h5>
+                    <ul class="text-secondary small">
+                        <li>수집항목: 이름, 휴대전화번호, 주소, 이메일, 접속 로그, 쿠키, 접속 IP 정보</li>
+                        <li>수집방법: 홈페이지(회원가입, 주문결제, 상담게시판)</li>
+                    </ul>
+
+                    <h5 class="fw-bold mt-4">2. 개인정보의 수집 및 이용목적</h5>
+                    <ul class="text-secondary small">
+                        <li>상품 주문 확인 및 배송 처리</li>
+                        <li>대금 결제 및 정산</li>
+                        <li>고객 상담 및 불만 처리</li>
+                    </ul>
+
+                    <h5 class="fw-bold mt-4">3. 개인정보의 보유 및 이용기간</h5>
+                    <p class="text-secondary small">
+                        회사는 법령에 따른 개인정보 보유·이용기간 또는 정보주체로부터 개인정보를 수집 시에 동의받은 개인정보 보유·이용기간 내에서 개인정보를 처리·보유합니다.<br>
+                        - 계약 또는 청약철회 등에 관한 기록: 5년<br>
+                        - 대금결제 및 재화 등의 공급에 관한 기록: 5년<br>
+                        - 소비자의 불만 또는 분쟁처리에 관한 기록: 3년
+                    </p>
+                    
+                    <h5 class="fw-bold mt-4">4. 개인정보 보호책임자</h5>
+                    <p class="text-secondary small">
+                        이름: 정우진<br>
+                        직책: 대표<br>
+                        연락처: 0507-1448-5644 / semodaninfo@gmail.com
+                    </p>
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{% url 'products:index' %}" class="btn btn-dark px-4 rounded-pill">메인으로 돌아가기</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

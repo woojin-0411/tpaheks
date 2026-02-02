@@ -1,0 +1,49 @@
+{% extends "products/base.html" %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-5 col-md-7">
+            <div class="card border-0 shadow-lg" style="border-radius: 25px; overflow: hidden;">
+                <div class="card-header bg-orange text-white text-center py-4 border-0">
+                    <h3 class="fw-bold m-0 font-heavy">회원가입</h3>
+                </div>
+                <div class="card-body p-5">
+                    <form method="POST" action="{% url 'account_signup' %}">
+                        {% csrf_token %}
+                        
+                        {% for field in form %}
+                        <div class="mb-3">
+                            <label class="form-label fw-bold small ms-1 text-secondary">{{ field.label }}</label>
+                            {{ field }}
+                            {% if field.help_text %}
+                                <div class="form-text small text-muted">{{ field.help_text }}</div>
+                            {% endif %}
+                            {% for error in field.errors %}
+                                <div class="text-danger small mt-1 ms-1">* {{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endfor %}
+
+                        <button type="submit" class="btn btn-dark w-100 py-3 rounded-pill fw-bold fs-5 mt-3">
+                            가입 완료하기
+                        </button>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <span class="text-muted small">이미 계정이 있으신가요?</span>
+                        <a href="{% url 'account_login' %}" class="text-orange fw-bold text-decoration-none ms-2">로그인</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 장고가 만든 input들에 부트스트랩 스타일 강제 적용
+    document.querySelectorAll('input').forEach(el => {
+        el.classList.add('form-control', 'form-control-lg', 'rounded-4', 'bg-light', 'border-0');
+    });
+</script>
+{% endblock %}

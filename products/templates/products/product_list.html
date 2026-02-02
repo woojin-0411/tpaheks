@@ -1,0 +1,80 @@
+{% extends "products/base.html" %}
+{% load static %}
+{% load humanize %}
+
+{% block title %}SHOP | 세모단{% endblock %}
+
+{% block content %}
+<style>
+    .shop-header { padding: 80px 0 40px; text-align: center; background: #f8f9fa; margin-bottom: 50px; }
+    .shop-title { font-family: 'GmarketSansBold'; font-size: 2.5rem; margin-bottom: 10px; }
+    
+    .search-box { max-width: 500px; margin: 0 auto 50px; position: relative; }
+    .search-input { width: 100%; padding: 15px 20px; border-radius: 50px; border: 1px solid #ddd; box-shadow: 0 5px 15px rgba(0,0,0,0.05); outline: none; transition: 0.3s; }
+    .search-input:focus { border-color: #ff6b00; box-shadow: 0 5px 20px rgba(255,107,0,0.2); }
+    .search-btn { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: #ff6b00; color: white; border: none; width: 40px; height: 40px; border-radius: 50%; cursor: pointer; }
+    
+    .product-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 30px; max-width: 1200px; margin: 0 auto; padding: 0 20px 80px; }
+    .product-card { background: white; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: 0.3s; text-decoration: none; color: inherit; display: block; border: 1px solid #eee; }
+    .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-color: #ff6b00; }
+    
+    .card-img-wrap { width: 100%; height: 300px; background: #fff; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; }
+    /* 이미지가 없을 때를 대비한 스타일 */
+    .card-img { width: 100%; height: 100%; object-fit: cover; }
+    
+    .card-info { padding: 20px; border-top: 1px solid #f0f0f0; }
+    .card-title { font-family: 'GmarketSansBold'; font-size: 1.2rem; margin-bottom: 5px; }
+    
+    /* 가격 스타일 업그레이드 */
+    .price-wrap { display: flex; align-items: center; gap: 10px; }
+    .original-price { color: #999; text-decoration: line-through; font-size: 0.9rem; }
+    .sale-price { color: #ff6b00; font-weight: bold; font-size: 1.2rem; }
+    .discount-badge { position: absolute; top: 15px; right: 15px; background: #ff4757; color: white; padding: 5px 10px; border-radius: 15px; font-weight: bold; font-size: 0.8rem; }
+</style>
+
+<div class="shop-header">
+    <h1 class="shop-title">ALL PRODUCTS</h1>
+    <p class="text-muted">세모단의 모든 라인업을 만나보세요</p>
+</div>
+
+<div class="search-box">
+    <form action="" method="GET">
+        <input type="text" name="q" class="search-input" placeholder="상품명 검색 (예: 후드, 반팔)" value="{{ query|default:'' }}">
+        <button type="submit" class="search-btn"><i class="fas fa-search"></i></button>
+    </form>
+</div>
+
+<div class="product-grid">
+    {% if products %}
+        {% for product in products %}
+        <a href="{% url 'products:product_custom_editor' product.code %}" class="product-card">
+            <div class="card-img-wrap">
+                {% if product.image %}
+                    <img src="{{ product.image.url }}" class="card-img" alt="{{ product.name }}">
+                {% else %}
+                    <span class="text-muted">이미지 준비중</span>
+                {% endif %}
+                
+                {% if product.original_price > product.price %}
+                <span class="discount-badge">SALE</span>
+                {% endif %}
+            </div>
+            
+            <div class="card-info">
+                <div class="card-title">{{ product.name }}</div>
+                <div class="price-wrap">
+                    {% if product.original_price > product.price %}
+                        <span class="original-price">{{ product.original_price|intcomma }}원</span>
+                    {% endif %}
+                    <span class="sale-price">{{ product.price|intcomma }}원</span>
+                </div>
+            </div>
+        </a>
+        {% endfor %}
+    {% else %}
+        <div class="col-12 text-center py-5">
+            <p class="text-muted fs-4">등록된 상품이 없습니다. 😢<br><span style="font-size:0.8rem">관리자 페이지에서 상품을 등록해주세요.</span></p>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}

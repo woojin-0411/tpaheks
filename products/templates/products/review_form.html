@@ -1,0 +1,33 @@
+{% extends "products/base.html" %}
+{% block content %}
+<div class="container py-5" style="max-width: 600px;">
+    <h3 class="fw-bold mb-4 text-center">리뷰 작성</h3>
+    <div class="card p-4 border-0 shadow-sm">
+        <div class="d-flex align-items-center mb-4">
+            <img src="{{ product.image.url }}" width="60" height="60" class="rounded border me-3">
+            <h5 class="mb-0">{{ product.name }}</h5>
+        </div>
+        
+        <form method="post" enctype="multipart/form-data">
+            {% csrf_token %}
+            <div class="mb-3">
+                <label class="form-label fw-bold">별점</label>
+                <select name="rating" class="form-select">
+                    <option value="5">⭐⭐⭐⭐⭐ (5점)</option>
+                    <option value="4">⭐⭐⭐⭐ (4점)</option>
+                    <option value="3">⭐⭐⭐ (3점)</option>
+                </select>
+            </div>
+            <div class="mb-3">
+                <label class="form-label fw-bold">내용</label>
+                <textarea name="content" class="form-control" rows="5" required placeholder="솔직한 후기를 남겨주세요!"></textarea>
+            </div>
+            <div class="mb-4">
+                <label class="form-label fw-bold">사진 첨부</label>
+                <input type="file" name="image" class="form-control">
+            </div>
+            <button type="submit" class="btn btn-dark w-100 py-3 fw-bold rounded-pill">리뷰 등록하기</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

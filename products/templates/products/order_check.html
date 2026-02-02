@@ -1,0 +1,198 @@
+{% extends "products/base.html" %}
+{% load humanize %}
+
+{% block content %}
+<script src="https://cdn.iamport.kr/v1/iamport.js"></script>
+
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-10"> 
+            <h2 class="text-center fw-bold mb-5 font-heavy">주문 조회</h2>
+
+            {% if is_member %}
+                <div class="alert alert-dark text-center mb-5 shadow-sm rounded-pill">
+                    <i class="fas fa-user-check me-2"></i><strong>{{ user.username }}</strong>님의 주문 내역입니다.
+                </div>
+            {% else %}
+                {% if not orders %}
+                <div class="card shadow-sm border-0 mb-5 bg-light">
+                    <div class="card-body p-5 text-center">
+                        <h5 class="fw-bold mb-3">비회원 주문 조회</h5>
+                        <p class="text-muted small mb-4">주문 시 입력했던 휴대폰 번호를 입력해주세요.</p>
+                        <form method="post" class="d-flex justify-content-center gap-2">
+                            {% csrf_token %}
+                            <input type="text" name="phone" class="form-control rounded-pill px-4" placeholder="010-0000-0000" style="max-width: 300px;" required>
+                            <button type="submit" class="btn btn-dark rounded-pill px-4 fw-bold">조회</button>
+                        </form>
+                        {% if error %}
+                            <p class="text-danger mt-3 mb-0 fw-bold"><i class="fas fa-exclamation-circle me-1"></i>{{ error }}</p>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endif %}
+            {% endif %}
+
+            {% if orders %}
+                <h5 class="fw-bold mb-3 ms-1">총 <span class="text-orange">{{ orders|length }}</span>건의 주문이 있습니다.</h5>
+                
+                {% for order in orders %}
+                <div class="card border-0 shadow-sm mb-4 overflow-hidden">
+                    <div class="card-body p-0">
+                        <div class="row g-0">
+                            
+                            <div class="col-md-3 position-relative bg-light d-flex align-items-center justify-content-center" style="min-height: 180px;">
+                                {% if order.product.image %}
+                                    <img src="{{ order.product.image.url }}" class="img-fluid" style="height: 100%; width:100%; object-fit: cover;">
+                                {% else %}
+                                    <span class="text-muted small">이미지 없음</span>
+                                {% endif %}
+                                
+                                <div class="position-absolute top-0 start-0 m-2">
+                                    {% if order.status == '견적요청' %}<span class="badge bg-secondary shadow-sm">견적 대기중</span>
+                                    {% elif order.status == '결제요청' %}<span class="badge bg-danger shadow-sm">결제 대기</span>
+                                    {% elif order.status == '결제완료' %}<span class="badge bg-success shadow-sm">결제 완료</span>
+                                    {% elif order.status == '배송완료' %}<span class="badge bg-primary shadow-sm">배송 완료</span>
+                                    {% elif order.status == '주문취소' %}<span class="badge bg-dark shadow-sm">취소됨</span>
+                                    {% else %}<span class="badge bg-info text-dark shadow-sm">{{ order.status }}</span>{% endif %}
+                                </div>
+                            </div>
+
+                            <div class="col-md-6 p-4 d-flex flex-column justify-content-center">
+                                <div class="d-flex justify-content-between mb-2">
+                                    <small class="text-muted">{{ order.created_at|date:"Y.m.d" }}</small>
+                                    <small class="text-muted">No. {{ order.order_no }}</small>
+                                </div>
+                                
+                                <h4 class="fw-bold mb-2 text-dark">{{ order.product.name }}</h4>
+                                
+                                <div class="text-secondary small mb-3">
+                                    {% if order.option_color %}
+                                        <span class="me-2"><i class="fas fa-palette me-1"></i>{{ order.option_color }}</span>
+                                    {% endif %}
+                                    {% if order.option_size %}
+                                        <span><i class="fas fa-ruler me-1"></i>{{ order.option_size }}</span>
+                                    {% endif %}
+                                    <br>
+                                    <span class="mt-1 d-block">주문자: {{ order.customer_name }} ({{ order.contact_number }})</span>
+                                </div>
+                                
+                                <h5 class="fw-bold text-orange mb-0">{{ order.total_price|intcomma }}원 <span class="text-muted small fw-normal">({{ order.quantity }}개)</span></h5>
+                            </div>
+
+                            <div class="col-md-3 bg-light p-4 d-flex flex-column justify-content-center align-items-center border-start">
+                                
+                                {% if order.status == '견적요청' %}
+                                    <div class="small text-muted mb-2 text-center">관리자가 확인 중입니다</div>
+                                    <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="cancelOrder('{{ order.order_no }}')">
+                                        주문 취소
+                                    </button>
+
+                                {% elif order.status == '결제요청' %}
+                                    <button onclick="requestPay('{{ order.product.name }}', {{ order.total_price }}, '{{ order.customer_name }}', '{{ order.contact_number }}', '{{ order.order_no }}')" 
+                                            class="btn btn-warning text-white fw-bold w-100 rounded-pill mb-2 shadow-sm" style="background-color: #ff6b00; border:none;">
+                                        <i class="fas fa-credit-card me-1"></i> 결제하기
+                                    </button>
+                                    
+                                    <button type="button" class="btn btn-outline-secondary btn-sm w-100 rounded-pill" onclick="cancelOrder('{{ order.order_no }}')">
+                                        취소
+                                    </button>
+
+                                {% elif order.status == '결제완료' %}
+                                    <div class="text-center mb-2">
+                                        <i class="fas fa-tools text-muted fa-2x mb-2"></i>
+                                        <div class="small fw-bold text-muted">제작 준비중</div>
+                                    </div>
+                                    <button class="btn btn-outline-dark btn-sm rounded-pill w-100" onclick="cancelOrder('{{ order.order_no }}')">
+                                        주문 취소 / 환불
+                                    </button>
+
+                                {% elif order.status == '배송완료' %}
+                                    <div class="text-center mb-3">
+                                        <i class="fas fa-box-open text-primary fa-2x mb-2"></i>
+                                        <div class="small fw-bold text-primary">배송 완료</div>
+                                    </div>
+                                    <a href="{% url 'products:review_create' order.product.code %}" class="btn btn-dark w-100 rounded-pill fw-bold">
+                                        <i class="fas fa-pen me-1"></i>리뷰 쓰기
+                                    </a>
+
+                                {% elif order.status == '주문취소' %}
+                                    <div class="text-center">
+                                        <i class="fas fa-ban text-muted fa-2x mb-2"></i>
+                                        <div class="text-muted small">취소된 주문</div>
+                                    </div>
+                                {% endif %}
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+
+                {% if not is_member %}
+                <div class="text-center mt-5">
+                    <a href="{% url 'products:order_check' %}" class="btn btn-link text-decoration-none text-muted">
+                        <i class="fas fa-sync-alt me-1"></i>다른 번호로 조회하기
+                    </a>
+                </div>
+                {% endif %}
+
+            {% elif not error and not is_member and not orders %}
+                {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+    // 1. 포트원 초기화
+    IMP.init("imp33630878"); 
+
+    // 2. 재결제 요청 함수 (기존 유지)
+    function requestPay(name, price, buyer_name, buyer_tel, merchant_uid) {
+        IMP.request_pay({
+            pg: "html5_inicis",  
+            pay_method: "card",
+            merchant_uid: merchant_uid, // 기존 주문번호 그대로 사용
+            name: name,
+            amount: price,
+            buyer_name: buyer_name,
+            buyer_tel: buyer_tel,
+        }, function (rsp) {
+            if (rsp.success) {
+                alert("결제가 완료되었습니다!");
+                location.reload(); 
+            } else {
+                alert("결제 실패: " + rsp.error_msg);
+            }
+        });
+    }
+
+    // 3. ★ [새로 추가된] 팝업 뜨는 주문 취소/환불 함수
+    function cancelOrder(orderNo) {
+        if (!confirm("정말 이 주문을 취소하고 환불하시겠습니까?")) {
+            return;
+        }
+
+        // 서버로 취소 요청 (AJAX)
+        fetch(`/products/order/cancel/${orderNo}/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}', // 보안 토큰
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.message === '환불 처리가 완료되었습니다.') {
+                alert("✅ 환불 완료!\n\n정상적으로 취소되었습니다.");
+                location.reload(); // 새로고침해서 '취소됨' 상태 확인
+            } else {
+                alert("❌ 취소 실패\n\n사유: " + (data.error || data.message));
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert("서버 통신 중 오류가 발생했습니다.");
+        });
+    }
+</script>
+{% endblock %}

@@ -1,53 +1,227 @@
 {% extends "products/base.html" %}
-{% block title %}Q&A | TR Clothing Store{% endblock %}
+{% load static %}
+
+{% block title %}Q&A & REVIEWS | 세모단{% endblock %}
+
 {% block content %}
-<div class="container" style="padding-top: 150px; padding-bottom: 100px;">
-    <div class="text-center mb-5">
-        <h2 style="font-family: 'GmarketSansBold';">Q&A 게시판</h2>
-        <p>궁금한 점을 자유롭게 남겨주세요.</p>
+<style>
+    /* =========================================
+       [Q&A] Modern Engineering Style
+       ========================================= */
+    
+    /* 폰트 설정 */
+    @import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+    
+    body { background-color: #fcfcfc; color: #333; font-family: 'Pretendard', sans-serif; }
+    
+    .font-heavy { font-family: 'GmarketSansBold', serif; letter-spacing: -0.5px; }
+    .text-orange { color: #ff6b00; }
+    
+ /* 1. VIDEO 섹션 (수정됨) */
+    .video-hero-section {
+        position: relative;
+        width: 100%;
+        height: 400px; /* 높이를 살짝 줄여서 부담스럽지 않게 조정 */
+        background-color: #000;
+        overflow: hidden;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    /* [핵심] 영상 위에 깔리는 검은색 투명 필터 */
+    .video-hero-section::after {
+        content: '';
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: rgba(0, 0, 0, 0.6); /* 60% 진하기의 검은색 */
+        z-index: 1; /* 영상(0)보다 위에, 글씨(2)보다 아래 */
+    }
+
+    .video-overlay-text {
+        position: absolute; 
+        z-index: 2; /* 필터보다 위에 있어야 함 */
+        text-align: center; 
+        color: white;
+        width: 100%;
+        padding: 0 20px;
+    }
+
+    /* 텍스트 디자인 강화 */
+    .video-overlay-text h2 {
+        font-size: 3.5rem; 
+        margin-bottom: 15px;
+        text-shadow: 0 10px 30px rgba(0,0,0,0.8); /* 그림자 진하게 */
+    }
+
+    .video-container {
+        width: 100%; 
+        height: 100%; 
+        object-fit: cover; 
+        z-index: 0;
+        /* 유튜브 영상 확대 (검은 여백 제거용) */
+        transform: scale(1.3); 
+    }
+    /* 2. SPLIT LAYOUT (Reviews & Q&A) */
+    .board-container { padding: 80px 0; max-width: 1200px; margin: 0 auto; }
+    .section-title { font-size: 1.8rem; margin-bottom: 25px; border-bottom: 2px solid #222; padding-bottom: 15px; display: flex; justify-content: space-between; align-items: flex-end; }
+    
+    /* 왼쪽: 리뷰 카드 스타일 */
+    .review-card {
+        background: white; border: 1px solid #eee; border-radius: 15px;
+        padding: 25px; margin-bottom: 20px;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.03);
+        transition: transform 0.3s;
+    }
+    .review-card:hover { transform: translateY(-5px); border-color: #ff6b00; }
+    .stars { color: #ff6b00; font-size: 0.9rem; margin-bottom: 10px; }
+    .review-text { font-size: 1rem; color: #444; line-height: 1.6; margin-bottom: 15px; }
+    .review-author { font-size: 0.85rem; color: #888; font-weight: bold; }
+
+    /* 오른쪽: Q&A 리스트 스타일 */
+    .qna-list-item {
+        background: white; border-bottom: 1px solid #eee;
+        padding: 20px 15px; transition: all 0.2s;
+        display: flex; align-items: center; justify-content: space-between;
+    }
+    .qna-list-item:hover { background-color: #f9f9f9; }
+    .qna-status { font-size: 0.8rem; font-weight: bold; padding: 5px 10px; border-radius: 5px; min-width: 70px; text-align: center; margin-right: 15px; }
+    .status-done { background-color: #e8f5e9; color: #2e7d32; } /* 답변완료 */
+    .status-wait { background-color: #f5f5f5; color: #757575; } /* 대기중 */
+    
+    .qna-title { font-weight: 600; color: #333; text-decoration: none; font-size: 1.05rem; display: block; margin-bottom: 5px; }
+    .qna-title:hover { color: #ff6b00; }
+    .qna-meta { font-size: 0.85rem; color: #999; }
+
+    .btn-write {
+        background-color: #222; color: white; border: none;
+        padding: 10px 25px; border-radius: 30px; font-weight: bold;
+        transition: all 0.3s; font-size: 0.9rem; text-decoration: none;
+    }
+    .btn-write:hover { background-color: #ff6b00; color: white; }
+
+    /* 모바일 대응 */
+    @media (max-width: 992px) {
+        .video-hero-section { height: 300px; }
+        .row { flex-direction: column; }
+        .col-lg-5, .col-lg-7 { width: 100%; margin-bottom: 50px; }
+    }
+</style>
+
+<div class="video-hero-section">
+    <div class="video-overlay-text">
+        <h2 class="font-heavy">VOICE OF CLIENTS</h2>
+        <p class="lead" style="font-weight: 400; opacity: 0.9; text-shadow: 0 2px 10px rgba(0,0,0,0.8);">
+            여러분의 이야기가 세모단을 만듭니다
+        </p>
     </div>
-    <div class="table-responsive">
-        <table class="table table-hover text-center align-middle">
-            <thead class="table-light">
-                <tr>
-                    <th style="width:10%;">번호</th>
-                    <th style="width:50%;">제목</th>
-                    <th style="width:15%;">작성자</th>
-                    <th style="width:15%;">작성일</th>
-                    <th style="width:10%;">상태</th>
-                </tr>
-            </thead>
-            <tbody>
+
+    <video class="video-container" autoplay loop muted playsinline>
+        <source src="https://cdn.pixabay.com/video/2020/05/25/40149-424043632_large.mp4" type="video/mp4">
+    </video>
+</div>
+
+<div class="container board-container">
+    <div class="row gx-5">
+        
+        <div class="col-lg-5">
+            <div class="section-title">
+                <div class="d-flex align-items-end">
+                    <h3 class="font-heavy text-orange mb-0 me-3">BEST REVIEWS</h3>
+                    <span style="font-size:0.9rem; color:#888; margin-bottom: 5px;">실시간 착용 후기</span>
+                </div>
+                
+                <a href="{% url 'products:order_check' %}" class="btn-write" 
+                onclick="alert('구매하신 내역 페이지로 이동합니다.\n[배송완료]된 상품의 [리뷰 쓰기] 버튼을 눌러주세요!');">
+                    <i class="fas fa-pen"></i> 리뷰 쓰기
+                </a>
+            </div>
+            {% for review in best_reviews %}
+            <div class="review-card">
+                <div class="d-flex justify-content-between">
+                    <div class="stars">
+                        {% if review.rating == 5 %}★★★★★
+                        {% elif review.rating == 4 %}★★★★
+                        {% elif review.rating == 3 %}★★★
+                        {% else %}★★{% endif %}
+                    </div>
+                    <small class="text-muted">{{ review.created_at|date:"Y.m.d" }}</small>
+                </div>
+                
+                <p class="review-text mt-2">"{{ review.content|truncatechars:80 }}"</p>
+                
+                <div class="d-flex align-items-center mt-3">
+                    {% if review.image %}
+                        <img src="{{ review.image.url }}" class="rounded-circle border me-2" width="30" height="30" style="object-fit:cover;">
+                    {% endif %}
+                    <p class="review-author mb-0">
+                        {% if review.user %}
+                            {{ review.user.username|slice:":1" }}**님
+                        {% else %}
+                            익명 구매자님
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+            {% empty %}
+            <div class="text-center py-5 text-muted border rounded bg-light">
+                <p class="mb-0">아직 등록된 베스트 리뷰가 없습니다.<br>첫 후기의 주인공이 되어보세요!</p>
+            </div>
+            {% endfor %}
+            
+            <div class="text-center mt-3">
+                <span class="text-muted small">* 후기는 상품 배송 완료 후 작성 가능합니다.</span>
+            </div>
+        </div>
+
+        <div class="col-lg-7">
+            <div class="section-title">
+                <h3 class="font-heavy mb-0">Q&A CENTER</h3>
+                <a href="{% url 'products:join_create' %}" class="btn-write">
+                    <i class="fas fa-pen"></i> 문의하기
+                </a>
+            </div>
+
+            <div class="qna-list-container">
                 {% for post in posts %}
-                <tr>
-                    <td>
-                        {% if post.is_pinned %}<span class="badge bg-danger rounded-pill">공지</span>
-                        {% else %}{{ forloop.revcounter }}{% endif %}
-                    </td>
-                    <td class="text-start ps-4">
-                        <a href="{% url 'products:qna_detail' post.pk %}" class="text-decoration-none text-dark fw-bold">
-                            {{ post.title }}
-                            {% if post.images.exists %}
-                                <i class="fas fa-image text-muted ms-1 small"></i>
-                            {% endif %}
-                            {% if post.answers.count > 0 %}<span class="text-danger small ms-1">[{{ post.answers.count }}]</span>{% endif %}
-                        </a>
-                    </td>
-                    <td>{{ post.author_name }}</td>
-                    <td>{{ post.created_at|date:"Y.m.d" }}</td>
-                    <td>
-                        {% if post.answers.exists %}<span class="badge bg-primary">답변완료</span>
-                        {% else %}<span class="badge bg-secondary">대기중</span>{% endif %}
-                    </td>
-                </tr>
+                <div class="qna-list-item">
+                    <div class="d-flex align-items-center" style="width: 100%;">
+                        <div class="qna-status {% if post.answers.exists %}status-done{% else %}status-wait{% endif %}">
+                            {% if post.answers.exists %}답변완료{% else %}대기중{% endif %}
+                        </div>
+                        
+                        <div class="flex-grow-1 ps-2">
+                            <a href="{% url 'products:join_detail' post.pk %}" class="qna-title text-decoration-none text-dark">
+                                
+                                {% if post.is_pinned %}<span class="text-danger me-1">[공지]</span>{% endif %}
+                                
+                                {{ post.title }}
+                                
+                                {% if post.is_secret %}
+                                    <i class="fas fa-lock text-muted ms-2 small"></i>
+                                {% endif %}
+                                
+                                {% if post.images.exists %}<i class="fas fa-image text-muted ms-1 small"></i>{% endif %}
+                            </a>
+                            
+                            <div class="qna-meta text-muted small mt-1">
+                                <span>{{ post.author_name }}</span> · <span>{{ post.created_at|date:"Y.m.d" }}</span>
+                            </div>
+                        </div>
+
+                        <div class="text-muted ps-3">
+                            <i class="fas fa-chevron-right"></i>
+                        </div>
+                    </div>
+                </div>
                 {% empty %}
-                <tr><td colspan="5" class="py-5 text-muted">등록된 글이 없습니다.</td></tr>
+                <div class="text-center py-5 bg-light rounded">
+                    <p class="text-muted mb-0">등록된 문의가 없습니다.<br>첫 번째 질문을 남겨보세요!</p>
+                </div>
                 {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    <div class="d-flex justify-content-end mt-4">
-        <a href="{% url 'products:join_create' %}" class="btn btn-dark px-4"><i class="fas fa-pen me-2"></i> 글쓰기</a>
+            </div>
+        </div>
+
     </div>
 </div>
 {% endblock %}

@@ -1,0 +1,61 @@
+{% extends "products/base.html" %}
+{% load socialaccount %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-5 col-md-7">
+            <div class="card border-0 shadow-lg" style="border-radius: 25px; overflow: hidden;">
+                <div class="card-body p-5">
+                    <div class="text-center mb-4">
+                        <h3 class="fw-bold font-heavy">로그인</h3>
+                        <p class="text-muted small">세모단에 오신 것을 환영합니다</p>
+                    </div>
+
+                    <div class="d-grid gap-2 mb-4">
+                        <a href="{% provider_login_url 'kakao' method='oauth2' %}" class="btn py-2 fw-bold text-dark" style="background:#FEE500; border:none; border-radius:12px;">
+                            <i class="fas fa-comment me-2"></i> 카카오로 3초 만에 시작
+                        </a>
+                        <a href="{% provider_login_url 'naver' method='oauth2' %}" class="btn py-2 fw-bold text-white" style="background:#03C75A; border:none; border-radius:12px;">
+                            <i class="fas fa-n me-2"></i> 네이버로 시작하기
+                        </a>
+                        <a href="{% provider_login_url 'google' method='oauth2' %}" class="btn py-2 fw-bold text-dark border" style="background:#fff; border-radius:12px;">
+                            <i class="fab fa-google me-2"></i> 구글로 시작하기
+                        </a>
+                    </div>
+
+                    <div class="position-relative text-center mb-4">
+                        <hr class="text-secondary">
+                        <span class="position-absolute top-50 start-50 translate-middle bg-white px-3 text-muted small">또는</span>
+                    </div>
+
+                    <form method="POST" action="{% url 'account_login' %}">
+                        {% csrf_token %}
+                        {% if form.errors %}
+                            <div class="alert alert-danger py-2 small text-center mb-3 rounded-3">
+                                아이디 또는 비밀번호를 확인해주세요.
+                            </div>
+                        {% endif %}
+                        
+                        <div class="form-floating mb-3">
+                            <input type="text" name="login" class="form-control rounded-4" id="id_login" placeholder="아이디" required>
+                            <label for="id_login">아이디 또는 이메일</label>
+                        </div>
+                        <div class="form-floating mb-4">
+                            <input type="password" name="password" class="form-control rounded-4" id="id_password" placeholder="비밀번호" required>
+                            <label for="id_password">비밀번호</label>
+                        </div>
+
+                        <button type="submit" class="btn btn-dark w-100 py-3 rounded-pill fw-bold fs-5">로그인</button>
+                    </form>
+
+                    <div class="text-center mt-4">
+                        <span class="text-muted small">아직 회원이 아니신가요?</span>
+                        <a href="{% url 'account_signup' %}" class="text-orange fw-bold text-decoration-none ms-2">회원가입</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
