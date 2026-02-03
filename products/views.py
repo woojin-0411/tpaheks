@@ -220,179 +220,210 @@ def remove_background_ai(request):
 # from django.contrib import messages
 # from .models import ProductOption 
 
+# [views.py]의 order_create 함수를 이걸로 통째로 바꾸세요!
+
+# views.py 파일을 열고 order_create 함수를 이걸로 통째로 교체하세요!
+
 def order_create(request):
     if request.method == 'POST':
-        # [기존 코드] 1. 데이터 수신
-        customer_name = request.POST.get('customer_name', '-')
-        phone = request.POST.get('phone', '-')
-        address = request.POST.get('address', '-')
-        product_name = request.POST.get('product_name', '')
-        color_selected = request.POST.get('color_selected', '') 
-        size_detail = request.POST.get('size_detail_text', '') # 예: "L", "XL"
-        
-        # [기존 코드] 숫자 데이터 처리
-        total_qty_str = request.POST.get('total_quantity', '0')
-        total_price_str = request.POST.get('total_price', '0')
-        total_qty = int(total_qty_str.replace(',', '')) if total_qty_str else 0
-        total_price = int(total_price_str.replace(',', '').replace('원', '')) if total_price_str else 0
-        
-        # [기존 코드] 작업지시서 데이터 받기
-        tech_pack_raw = request.POST.get('tech_pack_data', '정보 없음')
-        tech_pack = tech_pack_raw.replace('\n', '<br>')
-
-        # [기존 코드] 4면 이미지 데이터
-        images_data = {
-            'front': request.POST.get('captured_front'),
-            'back': request.POST.get('captured_back'),
-            'left': request.POST.get('captured_left'),
-            'right': request.POST.get('captured_right'),
-        }
-        
-        # [기존 코드] 상품 객체 찾기
-        product_obj = Product.objects.filter(name=product_name).first()
-        if not product_obj: 
-            product_obj = Product.objects.first() 
-        
-        # ============================================================
-        # ★ [추가 기능 1] 재고 확인 및 차감 로직 (주문 생성 전 실행)
-        # ============================================================
         try:
-            # DB에서 해당 상품의 해당 사이즈 옵션 찾기
-            selected_option = ProductOption.objects.filter(product=product_obj, size=size_detail).first()
+            # --------------------------------------------------------
+            # 1. 데이터 수신 (기존과 동일)
+            # --------------------------------------------------------
+            customer_name = request.POST.get('customer_name', '-')
+            phone = request.POST.get('phone', '-')
+            address = request.POST.get('address', '-')
+            customer_email = request.POST.get('customer_email', '') # 이메일 받기
+
+            product_name = request.POST.get('product_name', '')
+            color_selected = request.POST.get('color_selected', '') 
+            size_detail = request.POST.get('size_detail_text', '') 
             
-            if selected_option:
-                # 1. 재고 부족 체크
-                if selected_option.stock < total_qty:
-                    messages.error(request, f"죄송합니다. '{size_detail}' 사이즈의 재고가 부족합니다. (남은수량: {selected_option.stock}개)")
-                    # 재고가 없으면 주문을 생성하지 않고 에디터 화면으로 돌려보냅니다.
-                    return redirect('products:product_custom_editor', product_code=product_obj.code)
-                
-                # 2. 재고 차감 (트랜잭션으로 안전하게 처리)
-                with transaction.atomic():
-                    selected_option.stock -= total_qty
-                    selected_option.save()
+            # 숫자 데이터 처리
+            total_qty_str = request.POST.get('total_quantity', '0')
+            total_price_str = request.POST.get('total_price', '0')
+            try:
+                total_qty = int(total_qty_str.replace(',', ''))
+                total_price = int(total_price_str.replace(',', '').replace('원', ''))
+            except:
+                total_qty = 1
+                total_price = 0
+            
+            # 작업지시서 데이터 (관리자용)
+            tech_pack_raw = request.POST.get('tech_pack_data', '정보 없음')
+            tech_pack = tech_pack_raw.replace('\n', '<br>')
+
+            # 4면 이미지 데이터 (관리자용)
+            images_data = {
+                'front': request.POST.get('captured_front'),
+                'back': request.POST.get('captured_back'),
+                'left': request.POST.get('captured_left'),
+                'right': request.POST.get('captured_right'),
+            }
+            
+            # 상품 객체 찾기
+            product_obj = Product.objects.filter(name=product_name).first()
+            if not product_obj: product_obj = Product.objects.first() 
+            
+            # --------------------------------------------------------
+            # 2. 재고 확인 및 차감
+            # --------------------------------------------------------
+            try:
+                selected_option = ProductOption.objects.filter(product=product_obj, size=size_detail).first()
+                if selected_option:
+                    if selected_option.stock < total_qty:
+                        messages.error(request, f"재고 부족 (남은수량: {selected_option.stock}개)")
+                        return redirect('products:product_custom_editor', product_code=product_obj.code)
                     
-        except Exception as e:
-            # 재고 로직에서 에러가 나도 로그만 남기고 주문은 진행시킬지, 막을지 결정해야 합니다.
-            # 여기서는 안전을 위해 로그를 찍고 계속 진행합니다.
-            print(f"⚠️ 재고 처리 중 오류 발생 (주문은 진행됨): {e}")
-        # ============================================================
+                    with transaction.atomic():
+                        selected_option.stock -= total_qty
+                        selected_option.save()
+            except Exception as e:
+                print(f"⚠️ 재고 처리 오류: {e}")
 
-        # [기존 코드] 주문번호 생성
-        user = request.user if request.user.is_authenticated else None
-        rand_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
-        order_no = f"{datetime.now().strftime('%Y%m%d')}-{rand_str}"
+            # --------------------------------------------------------
+            # 3. 주문 저장 (DB)
+            # --------------------------------------------------------
+            user = request.user if request.user.is_authenticated else None
+            rand_str = ''.join(random.choices(string.ascii_uppercase + string.digits, k=4))
+            order_no = f"{datetime.now().strftime('%Y%m%d')}-{rand_str}"
 
-        # [기존 코드] 2. DB 저장 (Order 생성)
-        order = Order.objects.create(
-            user=user,
-            product=product_obj,
-            order_no=order_no,
-            customer_name=customer_name,
-            contact_number=phone,
-            shipping_address=address,
-            quantity=total_qty,
-            option_color=color_selected,
-            option_size=size_detail,
-            total_price=total_price,
-            status='견적요청'
-        )
-        
-        # ============================================================
-        # ★ [추가 기능 2] 카카오톡 알림 발송 (주문 생성 직후)
-        # ============================================================
-        try:
-            # [수정됨] 위에서 정의한 함수 이름(send_kakao_alimtalk)과 똑같이 맞췄습니다!
-            send_kakao_alimtalk(phone, customer_name, order_no)
-        except Exception as e:
-            print(f"⚠️ 카카오톡 발송 실패: {e}")
+            order = Order.objects.create(
+                user=user,
+                product=product_obj,
+                order_no=order_no,
+                customer_name=customer_name,
+                contact_number=phone,
+                customer_email=customer_email,
+                shipping_address=address,
+                quantity=total_qty,
+                option_color=color_selected,
+                option_size=size_detail,
+                total_price=total_price,
+                status='견적요청'
+            )
 
-        # [기존 코드] 3. 관리자 이메일 구성 (작업지시서 포함)
-        subject = f"[주문 접수] {customer_name}님 - {product_name} (No.{order_no})"
-        
-        html_content = f"""
-        <div style="font-family: 'Malgun Gothic', dotum, sans-serif; max-width: 700px; margin: 0 auto; border: 1px solid #ddd; padding: 20px;">
-            <h2 style="color: #333; border-bottom: 2px solid #333; padding-bottom: 10px;">SEMODAN 주문서</h2>
-            
-            <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px;">
-                <tr><td style="padding: 5px; font-weight: bold; width: 120px;">주문번호</td><td>{order_no}</td></tr>
-                <tr><td style="padding: 5px; font-weight: bold;">주문자/단체</td><td>{customer_name}</td></tr>
-                <tr><td style="padding: 5px; font-weight: bold;">연락처</td><td>{phone}</td></tr>
-                <tr><td style="padding: 5px; font-weight: bold;">배송지</td><td>{address}</td></tr>
-            </table>
-            
-            <div style="background: #f9f9f9; padding: 15px; border-radius: 5px; margin-bottom: 20px;">
-                <h3 style="margin-top: 0; font-size: 16px;">상품 정보</h3>
-                <p style="margin: 5px 0;"><strong>상품명:</strong> {product_name} ({color_selected})</p>
-                <p style="margin: 5px 0;"><strong>수량/금액:</strong> {total_qty}벌 / {total_price:,}원</p>
-                <p style="margin: 5px 0;"><strong>사이즈 상세:</strong> {size_detail}</p>
-            </div>
-
-            <div style="border: 1px solid #eee; padding: 15px; margin-bottom: 20px;">
-                <h3 style="margin-top: 0; font-size: 16px; color: #d63031;">[작업 지시서 / 로고 규격]</h3>
-                <div style="background: #333; color: #fff; padding: 15px; font-size: 14px; line-height: 1.6;">
-                    {tech_pack}
-                </div>
-            </div>
-
-            <h3>디자인 시안 (4면)</h3>
-            <p style="font-size: 12px; color: #666;">* 이미지가 보이지 않으면 첨부파일을 확인해주세요.</p>
-            <div style="display: flex; gap: 10px; margin-bottom: 10px;">
-                <div style="text-align:center;"><img src="cid:front_img" style="width:100%; max-width:200px; border:1px solid #eee;"><br>앞면</div>
-                <div style="text-align:center;"><img src="cid:back_img" style="width:100%; max-width:200px; border:1px solid #eee;"><br>뒷면</div>
-            </div>
-            <div style="display: flex; gap: 10px;">
-                <div style="text-align:center;"><img src="cid:left_img" style="width:100%; max-width:200px; border:1px solid #eee;"><br>왼팔</div>
-                <div style="text-align:center;"><img src="cid:right_img" style="width:100%; max-width:200px; border:1px solid #eee;"><br>오른팔</div>
-            </div>
-        </div>
-        """
-        
-        # [기존 코드] 4. 메일 객체 생성 및 이미지 첨부
-        msg = EmailMultiAlternatives(subject, "HTML을 지원하는 클라이언트에서 확인해주세요.", settings.EMAIL_HOST_USER, [settings.EMAIL_HOST_USER])
-        msg.attach_alternative(html_content, "text/html")
-
-        # [기존 코드] 4면 캡쳐 이미지 첨부 (CID 연결)
-        for key, data in images_data.items():
-            if data and 'base64,' in data:
+            # ========================================================
+            # ★ [메일 발송 1] 고객에게 보내는 "심플한 안내 메일"
+            # ========================================================
+            if customer_email:
                 try:
-                    img_format, imgstr = data.split(';base64,') 
-                    img_decoded = base64.b64decode(imgstr)
-                    mime_img = MIMEImage(img_decoded)
-                    mime_img.add_header('Content-ID', f'<{key}_img>')
-                    msg.attach(mime_img)
+                    subject_cust = f"[세모단] {customer_name}님, 주문이 정상 접수되었습니다."
+                    html_cust = f"""
+                    <div style="padding:20px; border:1px solid #ddd; max-width:600px;">
+                        <h2 style="color:#ff6b00;">SEMODAN</h2>
+                        <h3>{customer_name}님, 주문해주셔서 감사합니다.</h3>
+                        <p>고객님의 주문이 정상적으로 접수되었습니다.</p>
+                        <hr>
+                        <p><strong>주문번호:</strong> {order_no}</p>
+                        <p><strong>상품명:</strong> {product_name}</p>
+                        <p><strong>결제금액:</strong> {total_price:,}원</p>
+                        <hr>
+                        <p>현재 담당자가 내용을 확인하고 있습니다.<br>
+                        빠르게 제작하여 배송해 드리겠습니다.</p>
+                    </div>
+                    """
+                    # 고객에게만 발송
+                    send_mail(subject_cust, "", settings.EMAIL_HOST_USER, [customer_email], html_message=html_cust, fail_silently=True)
+                    print("✅ 고객용 메일 발송 성공")
                 except Exception as e:
-                    print(f"이미지 첨부 실패 ({key}): {e}")
+                    print(f"❌ 고객용 메일 실패: {e}")
 
-        # [기존 코드] 5. 로고 원본 파일 첨부
-        if 'logo_file' in request.FILES:
-            files = request.FILES.getlist('logo_file') 
-            for f in files:
-                try: msg.attach(f.name, f.read(), f.content_type)
-                except: pass
 
-        # [기존 코드] 전송
-        msg.send()
+            # ========================================================
+            # ★ [메일 발송 2] 관리자(나)에게 보내는 "상세 작업지시서" (기존 코드 복원)
+            # ========================================================
+            try:
+                subject_admin = f"[주문 접수] {customer_name}님 - {product_name} (No.{order_no})"
+                
+                # 관리자용 상세 HTML (테이블 + 작업지시서 포함)
+                html_admin = f"""
+                <div style="font-family: 'Malgun Gothic', sans-serif; max-width: 700px; border: 1px solid #333; padding: 20px;">
+                    <h2 style="background:#333; color:#fff; padding:10px;">SEMODAN 주문서 (관리자용)</h2>
+                    
+                    <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; border: 1px solid #ddd;">
+                        <tr><td style="padding: 8px; border:1px solid #ddd; font-weight: bold; background:#f0f0f0;">주문번호</td><td style="padding: 8px; border:1px solid #ddd;">{order_no}</td></tr>
+                        <tr><td style="padding: 8px; border:1px solid #ddd; font-weight: bold; background:#f0f0f0;">주문자</td><td style="padding: 8px; border:1px solid #ddd;">{customer_name} ({phone})</td></tr>
+                        <tr><td style="padding: 8px; border:1px solid #ddd; font-weight: bold; background:#f0f0f0;">이메일</td><td style="padding: 8px; border:1px solid #ddd;">{customer_email}</td></tr>
+                        <tr><td style="padding: 8px; border:1px solid #ddd; font-weight: bold; background:#f0f0f0;">배송지</td><td style="padding: 8px; border:1px solid #ddd;">{address}</td></tr>
+                        <tr><td style="padding: 8px; border:1px solid #ddd; font-weight: bold; background:#f0f0f0;">주문내역</td><td style="padding: 8px; border:1px solid #ddd;">
+                            {product_name} / {color_selected}<br>
+                            <strong>{size_detail}</strong> (총 {total_qty}벌)
+                        </td></tr>
+                        <tr><td style="padding: 8px; border:1px solid #ddd; font-weight: bold; background:#f0f0f0;">결제금액</td><td style="padding: 8px; border:1px solid #ddd; color:red; font-weight:bold;">{total_price:,}원</td></tr>
+                    </table>
+
+                    <div style="background: #fff3cd; padding: 15px; border: 1px solid #ffeeba; margin-bottom: 20px;">
+                        <h3 style="margin-top: 0; font-size: 16px; color: #856404;">[작업 지시서 (Tech Pack)]</h3>
+                        <div style="font-size: 14px; line-height: 1.6;">{tech_pack}</div>
+                    </div>
+
+                    <h3>디자인 시안 (4면)</h3>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <div style="text-align:center; border:1px solid #eee; padding:5px;"><img src="cid:front_img" style="width:150px;"><br>앞면</div>
+                        <div style="text-align:center; border:1px solid #eee; padding:5px;"><img src="cid:back_img" style="width:150px;"><br>뒷면</div>
+                        <div style="text-align:center; border:1px solid #eee; padding:5px;"><img src="cid:left_img" style="width:150px;"><br>왼팔</div>
+                        <div style="text-align:center; border:1px solid #eee; padding:5px;"><img src="cid:right_img" style="width:150px;"><br>오른팔</div>
+                    </div>
+                </div>
+                """
+
+                # 관리자에게만 발송
+                msg = EmailMultiAlternatives(subject_admin, "HTML 메일입니다.", settings.EMAIL_HOST_USER, [settings.EMAIL_HOST_USER])
+                msg.attach_alternative(html_admin, "text/html")
+
+                # 이미지 첨부 (CID 방식 - 관리자 메일에만 첨부하면 됨)
+                for key, data in images_data.items():
+                    if data and 'base64,' in data:
+                        try:
+                            img_format, imgstr = data.split(';base64,') 
+                            img_decoded = base64.b64decode(imgstr)
+                            mime_img = MIMEImage(img_decoded)
+                            mime_img.add_header('Content-ID', f'<{key}_img>')
+                            msg.attach(mime_img)
+                        except: pass
+                
+                # 로고 파일 첨부
+                if 'logo_file' in request.FILES:
+                    for f in request.FILES.getlist('logo_file'):
+                        msg.attach(f.name, f.read(), f.content_type)
+
+                msg.send() # 관리자 전송!
+                print("✅ 관리자용 상세 메일 발송 성공")
+
+            except Exception as e:
+                print(f"❌ 관리자용 메일 실패: {e}")
+            
+            # --------------------------------------------------------
+            # 4. 완료 페이지로 이동
+            # --------------------------------------------------------
+            return redirect('products:order_success', order_no=order.order_no)
+
+        except Exception as e:
+            print(f"🚫 주문 생성 중 에러 발생: {e}")
+            return redirect('products:index')
         
-        # [기존 코드] 성공 페이지로 이동
-        return redirect('products:order_success', order_no=order.order_no)
- 
 def order_success(request, order_no):
     order = get_object_or_404(Order, order_no=order_no)
     return render(request, 'products/order_success.html', {'order': order, 'order_no': order.order_no, 'phone': order.contact_number})
+
 def order_check(request):
     # 로그인 유저는 본인 것 확인
     if request.user.is_authenticated:
         my_orders = Order.objects.filter(user=request.user).order_by('-created_at')
         return render(request, 'products/order_check.html', {'orders': my_orders, 'is_member': True})
     
-    # 비회원 검색 (전화번호)
+    # 비회원 검색
     if request.method == 'POST':
-        phone = request.POST.get('phone', '').strip()
-        # 전화번호로 검색
-        orders = Order.objects.filter(contact_number=phone).order_by('-created_at')
+        raw_phone = request.POST.get('phone', '').strip()
+        # ★ [핵심] 입력받은 번호에서 하이픈 제거
+        clean_phone = raw_phone.replace('-', '')
         
-        context = {'search': True, 'is_member': False, 'phone_input': phone}
+        # DB에는 하이픈이 있을 수도, 없을 수도 있으니 '포함(icontains)'으로 검색
+        # (더 정확히 하려면 DB 저장할 때도 하이픈을 빼고 저장하는 게 좋습니다)
+        orders = Order.objects.filter(contact_number__icontains=clean_phone).order_by('-created_at')
+        
+        context = {'search': True, 'is_member': False, 'phone_input': raw_phone}
         if orders.exists():
             context['orders'] = orders
         else:

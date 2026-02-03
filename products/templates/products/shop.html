@@ -304,7 +304,8 @@
                     <input type="tel" name="phone" id="phone-input" class="form-control" placeholder="연락처 (010-0000-0000)" maxlength="13" required>
                 </div>
                 <div class="mb-3"><input type="text" name="address" class="form-control" placeholder="배송지 주소" required></div>
-                
+                <label>이메일 (주문 알림 수신용)</label>
+                <input type="email" name="customer_email" class="form-control" placeholder="example@email.com" required>
                 <div class="d-flex w-100 gap-2 mt-4"> <button type="submit" class="btn btn-warning flex-grow-1 py-3 text-white d-flex flex-column align-items-center justify-content-center" 
                             style="width: 50%; background:#ff6b00; border:none; border-radius: 15px; box-shadow: 0 4px 10px rgba(255, 107, 0, 0.2); transition: all 0.3s ease;">
                         <span class="fw-bold fs-5 mb-1">견적 전송</span>
@@ -376,8 +377,8 @@
     const printAreas = {
         'front': { top: '15%', left: '25%', width: '50%', height: '60%' },
         'back':  { top: '15%', left: '25%', width: '50%', height: '60%' },
-        'left':  { top: '30%', left: '35%', width: '30%', height: '30%' },
-        'right': { top: '30%', left: '35%', width: '30%', height: '30%' }
+        'left':  { top: '20%', left: '37%', width: '30%', height: '30%' },
+        'right': { top: '20%', left: '37%', width: '30%', height: '30%' }
     };
 
     $(document).ready(function() {
@@ -401,13 +402,11 @@
 
         // 1. [삭제 버튼] 클릭 기능
         $(document).on('click', '.btn-delete', function(e) {
-            e.stopPropagation(); // 배경 클릭 막기
-            if(confirm('정말 삭제하시겠습니까?')) {
-                $(this).closest('.design-obj').remove(); // 요소 삭제
-                calculateTotal(); // 가격 재계산
-            }
+            e.stopPropagation();
+            $(this).closest('.design-obj').remove(); // 묻지 않고 바로 삭제
+            calculateTotal();
         });
-
+        
         // 2. [원본 복구 버튼] 클릭 기능
         $(document).on('click', '.btn-restore', function(e) {
             e.stopPropagation();

@@ -93,10 +93,19 @@
     .qna-title:hover { color: #ff6b00; }
     .qna-meta { font-size: 0.85rem; color: #999; }
 
+    /* join.html 파일 위쪽 <style> 안에 있습니다 */
     .btn-write {
         background-color: #222; color: white; border: none;
         padding: 10px 25px; border-radius: 30px; font-weight: bold;
         transition: all 0.3s; font-size: 0.9rem; text-decoration: none;
+        
+        /* ★ 이 줄을 추가하세요! (글씨 줄바꿈 방지) */
+        white-space: nowrap; 
+        
+        /* 모바일에서 버튼 크기 유지 */
+        display: inline-block; 
+        min-width: 100px;
+        text-align: center;
     }
     .btn-write:hover { background-color: #ff6b00; color: white; }
 

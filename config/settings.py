@@ -16,7 +16,7 @@ SECRET_KEY = 'django-insecure-3x8w-r_8^p3@h8s!$p*d+p-e^y-e^w-g-^e^y-e^w-g'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['3.37.205.155', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['3.37.205.155', 'semodan.com', 'www.semodan.com', '127.0.0.1', 'localhost']
 
 # Application definition
 # ----------------------------------------------------------------------
@@ -167,20 +167,25 @@ SOCIALACCOUNT_PROVIDERS = {
         'SCOPE': ['profile_nickname', 'profile_image'], 
     }
 }
+# [settings.py 파일 하단]
+
+# ==========================================
+# ★ 이메일 설정 (Google Gmail로 변경)
+# ==========================================
 EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
-EMAIL_HOST = 'smtp.naver.com'
+EMAIL_HOST = 'smtp.gmail.com'  # 구글 서버 주소
+EMAIL_PORT = 587               # 구글 포트 번호 (TLS)
+EMAIL_USE_TLS = True           # 보안 연결 켜기
+EMAIL_USE_SSL = False          # (TLS를 쓰므로 SSL은 끔)
 
-# 네이버는 보통 SSL(465번 포트)을 사용합니다.
-EMAIL_PORT = 465
-EMAIL_USE_SSL = True  # TLS 대신 SSL 사용
-EMAIL_USE_TLS = False
+# 보내는 사람 이메일 (여기에 semodaninfo 주소를 적으세요)
+EMAIL_HOST_USER = 'semodaninfo@gmail.com'
 
-# [중요] 본인의 네이버 아이디 ( @naver.com 까지 다 적어주세요 )
-EMAIL_HOST_USER = 'jwj422love@naver.com'
+# ★ 아까 복사한 16자리 앱 비밀번호 (띄어쓰기 없이 붙여넣기)
+EMAIL_HOST_PASSWORD = 'jojm ezwp lcbq ppcz' 
 
-# [중요] 네이버 로그인 비밀번호
-# (만약 2단계 인증을 쓰고 계시다면, '애플리케이션 비밀번호'를 따로 발급받아 넣어야 합니다.)
-EMAIL_HOST_PASSWORD = '3VBYVSVM1D9R'
+# (선택) 기본 보내는 사람 이름 설정
+DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
 
 SITE_ID = 1
 

@@ -59,7 +59,7 @@ class Order(models.Model):
     total_price = models.IntegerField(default=0)
     # 요청사항 필드가 없다면 추가 (views.py에서 쓰임)
     requests = models.TextField(blank=True, null=True, verbose_name="요청사항")
-
+    customer_email = models.EmailField(max_length=100, blank=True, null=True, verbose_name="고객 이메일")
     def __str__(self):
         return f"{self.order_no} - {self.customer_name}"
 
