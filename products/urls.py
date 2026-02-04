@@ -38,4 +38,6 @@ urlpatterns = [
     path('review/create/<str:product_code>/', views.review_create, name='review_create'), # 리뷰 작성
     path('qna/', views.join_list, name='join_list'),
     path('order/cancel/<str:order_no>/', views.cancel_payment, name='cancel_payment'),
+    path('order/<int:order_id>/', views.order_detail, name='order_detail'), # 주문 상세
+    path('partnership/', views.partnership, name='partnership'), # 입점 문의
 ]

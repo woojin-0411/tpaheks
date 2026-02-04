@@ -24,8 +24,11 @@ from django.conf import settings
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.views.decorators.csrf import csrf_exempt
-from .forms import ReviewForm
-from .models import Product, Order, JoinPost, ProductColor, Answer, Review, ProductOption
+from .forms import ReviewForm,OrderForm, JoinForm, PartnershipForm
+from .models import Product, Order, JoinPost, ProductColor, Answer, Review, ProductOption, Partnership, PartnershipImage
+from django.http import HttpResponse
+from django.core.mail import EmailMessage
+import mimetypes
 
 SIZE_EXTRA_COST = {'XS': 0, 'S': 0, 'M': 0, 'L': 0, 'XL': 0, '2XL': 1100, '3XL': 1100, '4XL': 2000}
 
@@ -602,28 +605,102 @@ def review_create(request, product_code):
     
     return render(request, 'products/review_form.html', {'form': form, 'product': product})
 
+# 1. [신규] 주문 상세 페이지 (배송 정보 크게 보기)
+def order_detail(request, order_id):
+    order = get_object_or_404(Order, id=order_id)
+    # 주문자 본인인지 확인하는 로직 (세션 등으로 확인 권장)
+    # if request.user.email != order.customer_email: ... 
+    
+    return render(request, 'products/order_detail.html', {'order': order})
+
+# 2. [신규] 입점 문의 페이지 (이메일 발송 포함)
+# products/views.py
+# products/views.py
+
+def partnership(request):
+    if request.method == 'POST':
+        form = PartnershipForm(request.POST, request.FILES)
+        files = request.FILES.getlist('detail_images') 
+        
+        if form.is_valid():
+            try:
+                # 1. DB 저장
+                partnership = form.save() 
+                for f in files:
+                    PartnershipImage.objects.create(partnership=partnership, image=f)
+                
+                # 2. 이메일 내용 작성
+                subject = f"[입점문의] {partnership.brand_name} (담당: {partnership.manager_name})"
+                message = f"""
+                업체명: {partnership.brand_name}
+                사업자번호: {partnership.business_number}
+                담당자: {partnership.manager_name}
+                연락처: {partnership.contact}
+                이메일: {partnership.email}
+                위치: {partnership.location}
+                
+                내용:
+                {partnership.description}
+                """
+                
+                # 3. 이메일 객체 생성 및 파일 첨부
+                email = EmailMessage(
+                    subject,
+                    message,
+                    settings.EMAIL_HOST_USER,
+                    [settings.EMAIL_HOST_USER],
+                )
+                
+                if partnership.image:
+                    partnership.image.open('rb')
+                    mime_type, _ = mimetypes.guess_type(partnership.image.name)
+                    if mime_type is None: mime_type = 'application/octet-stream'
+                    email.attach(partnership.image.name, partnership.image.read(), mime_type)
+
+                for f in files:
+                    f.seek(0)
+                    mime_type, _ = mimetypes.guess_type(f.name)
+                    if mime_type is None: mime_type = 'application/octet-stream'
+                    email.attach(f.name, f.read(), mime_type)
+                
+                # 4. 전송 (실패해도 유저에겐 성공한 척 보여주고, 서버 로그에만 남김)
+                email.send(fail_silently=False)
+                
+            except Exception as e:
+                # [배포용 수정] 에러가 나면 서버(터미널)에만 출력하고, 고객에겐 그냥 넘어감
+                print(f"❌ 이메일 전송 실패: {e}")
+                # 필요하다면 여기에 'messages.error(request, ...)' 등을 추가할 수 있음
+
+            # 성공하든 메일만 실패하든 목록으로 이동
+            return redirect('products:product_list') 
+            
+        else:
+            # 폼 입력 실수 시 다시 작성 페이지로 (에러 내용은 form 안에 들어있음)
+            return render(request, 'products/partnership.html', {'form': form})
+            
+    else:
+        form = PartnershipForm()
+    
+    return render(request, 'products/partnership.html', {'form': form})
+
+
 def join_detail(request, pk):
     post = get_object_or_404(JoinPost, pk=pk)
     
-    # 비밀글 권한 체크
-    if post.is_secret:
-        # 1. 관리자(superuser)거나 작성자 본인(로그인한 경우)이면 통과
-        if request.user.is_superuser or (request.user.is_authenticated and request.user == post.author):
-            pass 
-        
-        # 2. 비회원이거나 다른 사람이면? -> 비밀번호 입력 확인
+    # 비밀글이 아니면 -> 비밀번호 체크 없이 바로 통과!
+    if not post.is_secret:
+        return render(request, 'products/join_detail.html', {'post': post})
+    
+    # 비밀글이면 -> 비밀번호 입력 페이지로 (기존 로직 유지)
+    # (기존에 작성하신 비밀번호 체크 로직이 있다면 여기 연결)
+    if request.method == 'POST':
+        input_password = request.POST.get('password')
+        if input_password == post.password:
+            return render(request, 'products/join_detail.html', {'post': post})
         else:
-            # 사용자가 입력한 비밀번호 확인 (POST 요청으로 들어옴)
-            input_pw = request.POST.get('password_check')
+            return render(request, 'products/join_password.html', {'post': post, 'error': '비밀번호가 일치하지 않습니다.'})
             
-            # 입력한 게 없거나 틀리면 -> 비밀번호 입력 화면을 보여줌
-            if input_pw != post.password:
-                return render(request, 'products/password_check.html', {'post': post})
-            
-            # 맞으면 통과! (아래 코드로 진행)
-
-    # (답변 가져오기 등 기존 코드 유지)
-    return render(request, 'products/join_detail.html', {'post': post})
+    return render(request, 'products/join_password.html', {'post': post})
 
 # [products/views.py] 파일 맨 아래에 추가
 

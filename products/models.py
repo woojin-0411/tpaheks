@@ -15,6 +15,11 @@ class Product(models.Model):
 
     def __str__(self):
         return self.name
+    
+    def get_discount_rate(self):
+        if self.original_price > self.price:
+            return int((self.original_price - self.price) / self.original_price * 100)
+        return 0
 
 # ★ [핵심] 상품 옵션 (사이즈 & 재고 관리)
 class ProductOption(models.Model):
@@ -52,6 +57,8 @@ class Order(models.Model):
     contact_number = models.CharField(max_length=20)
     shipping_address = models.CharField(max_length=255)
     quantity = models.IntegerField(default=1)
+    # [핵심] 이 'size' 필드가 없어서 에러가 났던 겁니다!
+    size = models.CharField(max_length=10, verbose_name="사이즈", default="FREE")
     option_color = models.CharField(max_length=50, blank=True)
     option_size = models.TextField(blank=True) # 선택한 사이즈 (S, M 등)
     status = models.CharField(max_length=20, default='입금대기')
@@ -60,6 +67,8 @@ class Order(models.Model):
     # 요청사항 필드가 없다면 추가 (views.py에서 쓰임)
     requests = models.TextField(blank=True, null=True, verbose_name="요청사항")
     customer_email = models.EmailField(max_length=100, blank=True, null=True, verbose_name="고객 이메일")
+    carrier = models.CharField(max_length=50, blank=True, null=True, verbose_name="택배사") # 예: CJ대한통운
+    tracking_number = models.CharField(max_length=100, blank=True, null=True, verbose_name="송장번호")
     def __str__(self):
         return f"{self.order_no} - {self.customer_name}"
 
@@ -93,3 +102,34 @@ class Answer(models.Model):
     content = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
 
+# [수정] Partnership 모델 업데이트
+class Partnership(models.Model):
+    brand_name = models.CharField(max_length=100, verbose_name="업체명(브랜드명)")
+    # 1. [신규] 사업자 번호 추가
+    business_number = models.CharField(max_length=20, verbose_name="사업자 등록번호", blank=True, null=True) 
+    
+    manager_name = models.CharField(max_length=50, verbose_name="담당자 이름")
+    contact = models.CharField(max_length=50, verbose_name="연락처")
+    email = models.EmailField(verbose_name="이메일")
+    location = models.CharField(max_length=200, verbose_name="업체 위치")
+    description = models.TextField(verbose_name="입점 희망 제품/설명")
+    
+    # 대표 사진 (한 장)
+    image = models.ImageField(upload_to='partnership/main/', blank=True, null=True, verbose_name="대표 사진")
+    
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.brand_name
+    
+    class Meta:
+        verbose_name = "입점 문의"
+        verbose_name_plural = "입점 문의 목록"
+
+# 2. [신규] 상세 사진들을 저장할 별도 모델 (여러 장 가능하게 함)
+class PartnershipImage(models.Model):
+    partnership = models.ForeignKey(Partnership, on_delete=models.CASCADE, related_name='images')
+    image = models.ImageField(upload_to='partnership/details/', verbose_name="상세 사진")
+
+    def __str__(self):
+        return f"{self.partnership.brand_name} - 상세사진"

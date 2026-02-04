@@ -19,17 +19,26 @@
     .product-card:hover { transform: translateY(-5px); box-shadow: 0 10px 25px rgba(0,0,0,0.1); border-color: #ff6b00; }
     
     .card-img-wrap { width: 100%; height: 300px; background: #fff; display: flex; align-items: center; justify-content: center; padding: 20px; position: relative; }
-    /* 이미지가 없을 때를 대비한 스타일 */
     .card-img { width: 100%; height: 100%; object-fit: cover; }
     
     .card-info { padding: 20px; border-top: 1px solid #f0f0f0; }
     .card-title { font-family: 'GmarketSansBold'; font-size: 1.2rem; margin-bottom: 5px; }
     
-    /* 가격 스타일 업그레이드 */
-    .price-wrap { display: flex; align-items: center; gap: 10px; }
-    .original-price { color: #999; text-decoration: line-through; font-size: 0.9rem; }
-    .sale-price { color: #ff6b00; font-weight: bold; font-size: 1.2rem; }
-    .discount-badge { position: absolute; top: 15px; right: 15px; background: #ff4757; color: white; padding: 5px 10px; border-radius: 15px; font-weight: bold; font-size: 0.8rem; }
+    /* 가격 스타일 */
+    .price-wrap { display: flex; align-items: center; gap: 8px; margin-top: 10px;}
+    
+    /* 할인율 뱃지 (사진 오른쪽 위) */
+    .discount-badge { 
+        position: absolute; 
+        top: 15px; right: 15px; 
+        background: #ff4757; 
+        color: white; 
+        padding: 5px 12px; 
+        border-radius: 15px; 
+        font-weight: bold; 
+        font-size: 0.9rem; 
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
 </style>
 
 <div class="shop-header">
@@ -55,37 +64,34 @@
                     <span class="text-muted">이미지 준비중</span>
                 {% endif %}
                 
-                {% if product.original_price > product.price %}
-                <span class="discount-badge">SALE</span>
+                {% if product.get_discount_rate > 0 %}
+                    <span class="discount-badge">{{ product.get_discount_rate }}% OFF</span>
                 {% endif %}
             </div>
             
             <div class="card-info">
-                <div class="d-flex justify-content-between align-items-start mb-2">
-                    <div class="card-title mb-0">{{ product.name }}</div>
-                    
-                    {% if product.original_price > product.price %}
-                    <span class="badge bg-danger">SALE</span>
-                    {% endif %}
-                </div>
+                <div class="card-title">{{ product.name }}</div>
 
                 <div class="price-wrap">
-                    {% if product.original_price > product.price %}
+                    {% if product.get_discount_rate > 0 %}
                         <div class="d-flex flex-column">
-                            <span class="original-price" style="text-decoration: line-through; color: #aaa; font-size: 0.9rem;">
+                            <span class="text-muted text-decoration-line-through small">
                                 {{ product.original_price|intcomma }}원
                             </span>
-                            <span class="sale-price" style="color: #ff4757; font-weight: bold; font-size: 1.3rem;">
+                            <span class="fw-bold fs-5 text-danger">
                                 {{ product.price|intcomma }}원
                             </span>
                         </div>
                     {% else %}
-                        <span class="sale-price" style="color: #333; font-weight: bold; font-size: 1.2rem;">
+                        <span class="fw-bold fs-5 text-dark">
                             {{ product.price|intcomma }}원
                         </span>
                     {% endif %}
                 </div>
             </div>
+            
+            <div class="text-center pb-3">
+                 </div>
         </a>
         {% endfor %}
     {% else %}
@@ -93,5 +99,14 @@
             <p class="text-muted fs-4">등록된 상품이 없습니다. 😢<br><span style="font-size:0.8rem">관리자 페이지에서 상품을 등록해주세요.</span></p>
         </div>
     {% endif %}
+</div><div class="container text-center mb-5 mt-4">
+    <div class="p-5 bg-light rounded-4 shadow-sm">
+        <h3 class="font-heavy mb-3">세모단과 함께 성장하세요</h3>
+        <p class="text-muted mb-4">브랜드 입점 및 제휴 문의를 기다립니다.</p>
+        <a href="{% url 'products:partnership' %}" class="btn btn-dark btn-lg rounded-pill px-5">
+            <i class="far fa-handshake me-2"></i> 입점 문의하기
+        </a>
+    </div>
 </div>
+
 {% endblock %}

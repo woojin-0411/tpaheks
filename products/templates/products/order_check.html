@@ -81,6 +81,10 @@
 
                             <div class="col-md-3 bg-light p-4 d-flex flex-column justify-content-center align-items-center border-start">
                                 
+                                <a href="{% url 'order_detail' order.id %}" class="btn btn-outline-dark btn-sm w-100 rounded-pill mb-2 fw-bold">
+                                    <i class="fas fa-search-plus me-1"></i>상세보기
+                                </a>
+                                
                                 {% if order.status == '견적요청' %}
                                     <div class="small text-muted mb-2 text-center">관리자가 확인 중입니다</div>
                                     <button type="button" class="btn btn-outline-secondary btn-sm rounded-pill px-3" onclick="cancelOrder('{{ order.order_no }}')">

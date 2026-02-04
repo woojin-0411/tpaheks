@@ -1,0 +1,185 @@
+{% extends 'products/base.html' %}
+{% load static %}
+
+{% block content %}
+<style>
+    /* 페이지 전용 스타일 */
+    .partnership-header {
+        background: #222;
+        color: white;
+        padding: 60px 0;
+        text-align: center;
+        margin-bottom: 50px;
+    }
+    .partnership-title {
+        font-family: 'GmarketSansBold';
+        font-size: 2.2rem;
+        margin-bottom: 15px;
+    }
+    .form-label {
+        font-weight: bold;
+        color: #333;
+        margin-top: 15px;
+    }
+    .form-control {
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #ddd;
+    }
+    .form-control:focus {
+        border-color: #ff6b00;
+        box-shadow: 0 0 0 0.2rem rgba(255, 107, 0, 0.15);
+    }
+    
+    /* [핵심] 파일 업로드 버튼 꾸미기 */
+    .file-upload-wrapper {
+        position: relative;
+        margin-top: 10px;
+        border: 2px dashed #ddd;
+        border-radius: 10px;
+        padding: 30px;
+        text-align: center;
+        background: #f9f9f9;
+        transition: 0.3s;
+    }
+    .file-upload-wrapper:hover {
+        border-color: #ff6b00;
+        background: #fff;
+    }
+    .custom-file-input {
+        display: none; /* 못생긴 원래 버튼 숨김 */
+    }
+    .custom-file-label {
+        cursor: pointer;
+        display: inline-block;
+        padding: 10px 25px;
+        background: #555;
+        color: white;
+        border-radius: 50px;
+        font-weight: bold;
+        transition: 0.3s;
+    }
+    .custom-file-label:hover {
+        background: #333;
+    }
+    .custom-file-label i {
+        margin-right: 8px;
+    }
+    .file-info-text {
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: #888;
+    }
+</style>
+
+<div class="partnership-header">
+    <div class="container">
+        <h1 class="partnership-title">PARTNERSHIP</h1>
+        <p class="opacity-75">세모단과 함께 성장할 파트너를 찾습니다.</p>
+    </div>
+</div>
+
+<div class="container mb-5">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-lg border-0" style="border-radius: 20px;">
+                <div class="card-body p-5">
+                    <form method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        
+                        <h4 class="fw-bold mb-4 pb-2 border-bottom">기본 정보</h4>
+                        
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">업체명 (브랜드명)</label>
+                                {{ form.brand_name }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">사업자 등록번호</label>
+                                {{ form.business_number }}
+                            </div>
+                        </div>
+
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">담당자 이름</label>
+                                {{ form.manager_name }}
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">연락처</label>
+                                {{ form.contact }}
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">이메일</label>
+                            {{ form.email }}
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">업체 위치 (주소)</label>
+                            {{ form.location }}
+                        </div>
+
+                        <h4 class="fw-bold mb-4 mt-5 pb-2 border-bottom">입점 내용</h4>
+
+                        <div class="mb-4">
+                            <label class="form-label">제안 내용 및 설명</label>
+                            {{ form.description }}
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label">대표 사진 (1장)</label>
+                            <div class="file-upload-wrapper">
+                                <label for="id_image" class="custom-file-label">
+                                    <i class="fas fa-camera"></i> 대표 사진 선택
+                                </label>
+                                <input type="file" name="image" id="id_image" class="custom-file-input" onchange="showFileName(this, 'main-file-name')">
+                                <div id="main-file-name" class="file-info-text">선택된 파일 없음</div>
+                            </div>
+                        </div>
+
+                        <div class="mb-5">
+                            <label class="form-label">상세 사진 (여러 장 선택 가능)</label>
+                            <div class="file-upload-wrapper">
+                                <label for="id_detail_images" class="custom-file-label" style="background: #ff6b00; border:none;">
+                                    <i class="fas fa-images"></i> 상세 이미지들 선택
+                                </label>
+                                <input type="file" name="detail_images" id="id_detail_images" class="custom-file-input" multiple onchange="showFileName(this, 'detail-file-name')">
+                                <div id="detail-file-name" class="file-info-text">선택된 파일 없음</div>
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2 mt-5">
+                            <button type="submit" class="btn btn-dark btn-lg py-3 fw-bold" style="border-radius: 50px;">
+                                입점 문의 제출하기
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 폼 필드에 부트스트랩 클래스 자동 적용
+    document.querySelectorAll('input[type="text"], input[type="email"], textarea').forEach(el => {
+        el.classList.add('form-control');
+    });
+
+    // 파일 선택하면 이름 뜨게 하기
+    function showFileName(input, outputId) {
+        const output = document.getElementById(outputId);
+        if (input.files && input.files.length > 1) {
+            output.innerText = input.files.length + "개의 파일이 선택되었습니다.";
+            output.style.color = "#ff6b00";
+        } else if (input.files && input.files.length === 1) {
+            output.innerText = input.files[0].name;
+            output.style.color = "#333";
+        } else {
+            output.innerText = "선택된 파일 없음";
+        }
+    }
+</script>
+{% endblock %}

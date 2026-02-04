@@ -1,0 +1,40 @@
+{% extends 'products/base.html' %}
+{% block content %}
+<div class="container mt-5">
+    <h2 class="mb-4">주문 상세 내역</h2>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-white fw-bold">주문번호: No.{{ order.id }}</div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <img src="{{ order.product.main_image.url }}" class="img-fluid rounded shadow-sm" alt="상품이미지">
+                </div>
+                <div class="col-md-8">
+                    <h4>{{ order.product.name }}</h4>
+                    <p class="text-muted">옵션: {{ order.size }} | 수량: {{ order.quantity }}개</p>
+                    <hr>
+                    <h5>총 결제금액: ₩{{ order.total_price }}</h5>
+                    <p>주문일: {{ order.created_at|date:"Y-m-d" }}</p>
+                    
+                    <div class="alert alert-secondary mt-3">
+                        <h5 class="alert-heading"><i class="fas fa-truck"></i> 배송 정보</h5>
+                        {% if order.tracking_number %}
+                            <p class="mb-0 fw-bold fs-5 text-primary">
+                                {{ order.carrier }} : {{ order.tracking_number }}
+                            </p>
+                            <small class="text-muted">배송이 시작되었습니다.</small>
+                        {% else %}
+                            <p class="mb-0">상품 준비 중입니다.</p>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="text-center">
+        <a href="{% url 'product_list' %}" class="btn btn-outline-secondary">쇼핑 계속하기</a>
+    </div>
+</div>
+{% endblock %}
