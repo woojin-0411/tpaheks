@@ -182,7 +182,7 @@ EMAIL_USE_SSL = False          # (TLS를 쓰므로 SSL은 끔)
 EMAIL_HOST_USER = 'semodaninfo@gmail.com'
 
 # ★ 아까 복사한 16자리 앱 비밀번호 (띄어쓰기 없이 붙여넣기)
-EMAIL_HOST_PASSWORD = 'jojm ezwp lcbq ppcz' 
+EMAIL_HOST_PASSWORD = 'fake_number' 
 
 # (선택) 기본 보내는 사람 이름 설정
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
