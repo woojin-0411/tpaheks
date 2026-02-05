@@ -150,10 +150,32 @@
                             </div>
                         </div>
 
+                        <div class="mb-3">
+                            <label for="hope_price" class="form-label fw-bold">희망 단가 (예상 금액)</label>
+                            <input type="text" class="form-control" id="hope_price" name="hope_price" placeholder="예: 15,000원 
+                        </div>
+
+                        <div class="mb-4">
+                            <label class="form-label fw-bold">희망 단가 부가세 포함 여부</label>
+                            <div class="d-flex gap-4 p-3 bg-light rounded border">
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="vat_type" id="vat_yes" value="부가세 포함" checked>
+                                    <label class="form-check-label" for="vat_yes">부가세 포함 금액</label>
+                                </div>
+                                <div class="form-check">
+                                    <input class="form-check-input" type="radio" name="vat_type" id="vat_no" value="부가세 별도">
+                                    <label class="form-check-label" for="vat_no">부가세 별도 (+10%)</label>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="d-grid gap-2 mt-5">
                             <button type="submit" class="btn btn-dark btn-lg py-3 fw-bold" style="border-radius: 50px;">
                                 입점 문의 제출하기
                             </button>
+                            <p class="text-center text-muted mt-3 small">
+                                <i class="fas fa-bolt text-warning me-1"></i>빠른 시간 내에 회신드리겠습니다.
+                            </p>    
                         </div>
                     </form>
                 </div>

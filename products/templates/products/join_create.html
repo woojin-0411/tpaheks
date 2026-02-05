@@ -1,7 +1,4 @@
 {% extends "products/base.html" %}
-
-{% block title %}문의하기{% endblock %}
-
 {% block content %}
 <div class="container" style="padding-top: 150px; padding-bottom: 100px; max-width: 700px;">
     <div class="text-center mb-5">
@@ -9,38 +6,35 @@
         <p class="text-muted">궁금한 점을 남겨주시면 빠르게 답변해 드립니다.</p>
     </div>
 
-    {% if error %}
-        <div class="alert alert-danger text-center">{{ error }}</div>
-    {% endif %}
-
     <div class="card shadow-sm border-0">
         <div class="card-body p-4 p-md-5">
             <form method="post" enctype="multipart/form-data">
                 {% csrf_token %}
                 
                 <div class="row">
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">작성자</label>
                         <input type="text" class="form-control" name="author_name" 
                                value="{% if user.is_authenticated %}{{ user.username }}{% endif %}" required>
                     </div>
                     
-                    <div class="col-md-4 mb-3">
+                    <div class="col-md-6 mb-3">
                         <label class="form-label fw-bold">연락처</label>
-                        <input type="text" class="form-control" name="contact" placeholder="010-0000-0000" required>
-                    </div>
-
-                    <div class="col-md-4 mb-3">
-                        <label class="form-label fw-bold">글 비밀번호 (4자리)</label>
-                        <input type="password" class="form-control" name="password" maxlength="4" placeholder="숫자 4자리" required>
+                        <input type="text" class="form-control" name="contact" placeholder="010-0000-0000 (선택사항)">
                     </div>
                 </div>
 
                 <div class="form-check form-switch mb-3">
-                    <input class="form-check-input" type="checkbox" id="secretCheck" name="is_secret">
-                    <label class="form-check-label" for="secretCheck">
-                        <i class="fas fa-lock me-1"></i>비밀글로 설정 (비밀번호를 모르면 볼 수 없습니다)
+                    <input class="form-check-input" type="checkbox" id="is_secret" name="is_secret">
+                    <label class="form-check-label fw-bold" for="is_secret">
+                        <i class="fas fa-lock me-1"></i>비밀글로 설정
                     </label>
+                </div>
+
+                <div id="password-area" style="display: none;" class="mb-3">
+                    <label class="form-label fw-bold">비밀번호 (4자리)</label>
+                    <input type="password" name="password" class="form-control rounded-pill" 
+                            placeholder="글을 확인 할 비밀번호 4자리" maxlength="4">
                 </div>
 
                 <div class="mb-3">
@@ -58,4 +52,20 @@
         </div>
     </div>
 </div>
+
+<script>
+    const secretCheckbox = document.getElementById('is_secret');
+    const passwordArea = document.getElementById('password-area');
+    const passwordInput = passwordArea.querySelector('input');
+
+    secretCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            passwordArea.style.display = 'block';
+            passwordInput.required = true;
+        } else {
+            passwordArea.style.display = 'none';
+            passwordInput.required = false;
+        }
+    });
+</script>
 {% endblock %}

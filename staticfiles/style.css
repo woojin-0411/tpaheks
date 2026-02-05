@@ -1,0 +1,110 @@
+/* =========================================
+   [GLOBAL] 공통 스타일 (Bright & Trendy Ver.)
+   ========================================= */
+
+/* 폰트 임포트 (GmarketSans, Pretendard) */
+@font-face { font-family: 'GmarketSansMedium'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansMedium.woff') format('woff'); font-weight: normal; font-style: normal; }
+@font-face { font-family: 'GmarketSansBold'; src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff'); font-weight: normal; font-style: normal; }
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css");
+
+html { scroll-behavior: smooth; }
+
+body {
+    /* [수정] 따뜻하고 고급스러운 웜 그레이 베이지 톤 */
+    background-color: #f8f7f5;
+    color: #333;
+    font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+    padding-top: 100px;
+    margin: 0;
+}
+
+/* --- 상단 메뉴바 (화이트 & 심플) --- */
+.navbar {
+    background-color: rgba(255, 255, 255, 0.95) !important; /* 반투명 화이트 */
+    backdrop-filter: blur(10px); /* 유리 효과 */
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+    min-height: 100px !important;
+    padding: 0 !important;
+    box-shadow: none; /* 그림자 제거하여 더 깔끔하게 */
+}
+
+/* 메뉴 항목 및 로고 스타일 */
+.navbar-brand { padding-left: 40px !important; height: 100px; display: flex; align-items: center; }
+.custom-logo { font-family: 'GmarketSansBold', sans-serif; font-size: 1.5rem !important; color: #222 !important; }
+.custom-logo .emphasize { color: #ff6b00 !important; }
+
+.navbar-nav.menu-center { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: flex; }
+.navbar-nav .nav-link {
+    font-family: 'GmarketSansMedium', sans-serif; font-size: 1.1rem !important; color: #444 !important;
+    margin: 0 25px; padding: 0 !important; position: relative; transition: color 0.3s;
+}
+.navbar-nav .nav-link:hover, .navbar-nav .nav-link.active { color: #ff6b00 !important; }
+
+/* Login/Join 그룹 */
+.login-join-group { margin-left: auto; padding-right: 30px; display: flex; align-items: center; height: 100px; }
+.login-join-group .nav-link { font-size: 0.95rem !important; color: #777 !important; margin-left: 20px; }
+
+
+/* --- 카카오톡 상담 버튼 --- */
+.kakao-chat-button {
+    background-color: #FEE500 !important; 
+    width: 70px; height: 70px; border-radius: 50%; 
+    display: flex; justify-content: center; align-items: center;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15); /* 그림자 부드럽게 */
+    z-index: 2000; transition: transform 0.3s ease-in-out; text-decoration: none; 
+}
+.kakao-chat-button i { font-size: 32px; color: #3C1E1E; }
+.kakao-chat-text { display: none !important; }
+.kakao-chat-button:hover { transform: translateY(-5px) scale(1.1); box-shadow: 0 8px 20px rgba(255, 229, 0, 0.4); }
+
+/* 폰트 적용 */
+#main-title, .product-card h3, .done-text, .modal-content-custom h2, .receipt-title {
+    font-family: 'GmarketSansBold', serif !important;
+}
+
+/* 모바일 반응형 */
+@media (max-width: 991.98px) {
+    .navbar { min-height: 60px !important; } body { padding-top: 60px; }
+    .navbar-brand { height: 60px; padding-left: 20px !important; }
+    .navbar-nav.menu-center { position: relative; left: 0; top: 0; transform: none; flex-direction: column; background: #fff; width: 100%; padding: 20px 0; border-top: 1px solid #eee; }
+    .navbar-nav .nav-link { margin: 10px 0; font-size: 1.2rem !important; }
+    .login-join-group { display: none; } /* 모바일에서는 일단 숨김 */
+}
+
+/* === 햄버거 메뉴 커스텀 스타일 === */
+.navbar-toggler {
+    border: none !important; /* 투박한 테두리 제거 */
+    box-shadow: none !important; /* 클릭 시 파란 테두리 제거 */
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
+    width: 30px;
+    height: 24px;
+    background: transparent;
+    cursor: pointer;
+}
+
+.navbar-toggler span {
+    display: block;
+    width: 100%;
+    height: 3px;
+    background-color: #333; /* 메뉴 선 색상 (진한 회색) */
+    border-radius: 3px;
+    transition: all 0.3s ease-in-out;
+}
+
+/* 메뉴가 열렸을 때 (X 모양으로 변신) */
+.navbar-toggler[aria-expanded="true"] span:nth-child(1) {
+    transform: rotate(45deg) translate(5px, 6px);
+    background-color: #ff6b00; /* 열리면 주황색으로 포인트 */
+}
+
+.navbar-toggler[aria-expanded="true"] span:nth-child(2) {
+    opacity: 0; /* 가운데 선은 투명하게 */
+}
+
+.navbar-toggler[aria-expanded="true"] span:nth-child(3) {
+    transform: rotate(-45deg) translate(5px, -6px);
+    background-color: #ff6b00;
+}

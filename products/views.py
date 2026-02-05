@@ -14,6 +14,7 @@ from datetime import datetime
 from rembg import remove 
 from PIL import Image
 from io import BytesIO
+from django.db.models import Q
 # from coolsms_backend import Coolsms
 from django.db import transaction # 재고 트랜잭션용
 from django.contrib import messages
@@ -411,30 +412,42 @@ def order_success(request, order_no):
     return render(request, 'products/order_success.html', {'order': order, 'order_no': order.order_no, 'phone': order.contact_number})
 
 def order_check(request):
-    # 로그인 유저는 본인 것 확인
+    # 1. 로그인 유저는 본인 것 확인
     if request.user.is_authenticated:
         my_orders = Order.objects.filter(user=request.user).order_by('-created_at')
         return render(request, 'products/order_check.html', {'orders': my_orders, 'is_member': True})
-    
-    # 비회원 검색
+
+    # 2. 비회원 조회
     if request.method == 'POST':
-        raw_phone = request.POST.get('phone', '').strip()
-        # ★ [핵심] 입력받은 번호에서 하이픈 제거
-        clean_phone = raw_phone.replace('-', '')
-        
-        # DB에는 하이픈이 있을 수도, 없을 수도 있으니 '포함(icontains)'으로 검색
-        # (더 정확히 하려면 DB 저장할 때도 하이픈을 빼고 저장하는 게 좋습니다)
-        orders = Order.objects.filter(contact_number__icontains=clean_phone).order_by('-created_at')
-        
-        context = {'search': True, 'is_member': False, 'phone_input': raw_phone}
-        if orders.exists():
-            context['orders'] = orders
-        else:
-            context['error'] = '해당 전화번호로 조회된 주문이 없습니다.'
+        # [수정 포인트] html에서 'phone'으로 보내든 'contact_number'로 보내든 둘 다 받음
+        raw_number = request.POST.get('phone') or request.POST.get('contact_number')
+        name = request.POST.get('name') # 이름 입력칸이 있다면 가져옴
+
+        if raw_number:
+            # 하이픈 제거
+            clean_number = raw_number.replace('-', '').strip()
             
-        return render(request, 'products/order_check.html', context)
-        
-    return render(request, 'products/order_check.html', {'search': False, 'is_member': False})
+            # 하이픈 포함 버전 생성
+            if len(clean_number) == 11:
+                hyphen_number = f"{clean_number[:3]}-{clean_number[3:7]}-{clean_number[7:]}"
+            else:
+                hyphen_number = clean_number
+
+            # 조회 (이름 필드가 화면에 없으면 번호로만 조회하도록 처리)
+            if name:
+                orders = Order.objects.filter(
+                    Q(customer_name=name) & 
+                    (Q(contact_number=clean_number) | Q(contact_number=hyphen_number))
+                ).order_by('-created_at')
+            else:
+                # 이름 입력칸이 화면에 없을 경우 번호로만 검색
+                orders = Order.objects.filter(
+                    Q(contact_number=clean_number) | Q(contact_number=hyphen_number)
+                ).order_by('-created_at')
+
+            return render(request, 'products/order_check.html', {'orders': orders})
+
+    return render(request, 'products/order_check.html')
 
 def join_list(request):
     # 1. 문의글 가져오기 (최신순)
@@ -450,37 +463,57 @@ def join_list(request):
         'best_reviews': best_reviews # 템플릿으로 같이 보냄
     })
 
+# products/views.py
+
 def join_create(request):
     if request.method == 'POST':
+        # 1. 데이터 수집 (HTML의 name 속성과 일치시켜야 합니다)
+        name = request.POST.get('author_name', '익명') # HTML에 author_name으로 되어있음
         title = request.POST.get('title')
         content = request.POST.get('content')
-        author_name = request.POST.get('author_name')
-        contact = request.POST.get('contact') # 연락처
-        password = request.POST.get('password') # 비밀번호 (숫자 4자리)
+        password = request.POST.get('password', '').strip()
         is_secret = request.POST.get('is_secret') == 'on'
+        
+        # 입점 문의 데이터 (파트너십에서 보낼 경우)
+        phone = request.POST.get('contact', '').strip()
+        if not phone:
+            phone = "미입력"
+        category = request.POST.get('category')
+        hope_price = request.POST.get('hope_price')
 
-        # 로그인한 회원이면 author에 저장, 아니면 None
-        current_user = request.user if request.user.is_authenticated else None
-        
-        # 이름이 없으면 '익명' 처리
-        if not author_name: 
-            author_name = current_user.username if current_user else "익명"
+        # 비밀번호 기본값 설정
+        if not password:
+            password = "0411"
 
-        post = JoinPost.objects.create(
-            author=current_user,
-            author_name=author_name,
-            password=password,      # 비회원 비밀번호 저장
-            contact_number=contact, # 연락처 저장
-            title=title,
-            content=content,
-            is_secret=is_secret,
-        )
+        # 2. 내용 구성 (입점 정보가 있다면 합치기)
+        extra_info = ""
+        if category or phone != "미입력" or hope_price:
+            extra_info = f"[카테고리: {category}]\n[연락처: {phone}]\n[희망단가: {hope_price}]\n\n"
         
-        # (이미지 저장 로직이 있다면 여기에 유지)
-        
-        return redirect('products:join_list') # 'qna' 대신 'join_list'로 통일
+        combined_content = f"{extra_info}{content}".strip()
+
+        # 3. DB 저장 (딱 한 번만 실행)
+        try:
+            JoinPost.objects.create(
+                author=request.user if request.user.is_authenticated else None,
+                author_name=name,
+                title=title if title else f"{name}님의 문의입니다.",
+                content=combined_content,
+                password=password,
+                is_secret=is_secret
+            )
+        except Exception as e:
+            print(f"DB 저장 실패: {e}")
+
+        # 4. 관리자 메일 발송
+        subject = f"[세모단 문의 알림] {name}님의 글: {title}"
+        send_mail(subject, combined_content, settings.EMAIL_HOST_USER, [settings.EMAIL_HOST_USER], fail_silently=True)
+
+        return redirect('products:qna')
 
     return render(request, 'products/join_create.html')
+
+
 @login_required(login_url='/common/login/') # 로그인은 필수
 def review_create(request, product_code):
     product = get_object_or_404(Product, code=product_code)
@@ -516,8 +549,8 @@ def join_answer_create(request, pk):
         admin_code = request.POST.get('admin_code') # 입력한 관리자 코드
         content = request.POST.get('content') # 답변 내용
         
-        # 관리자 코드 확인 (4678)
-        if admin_code == '4678':
+        # 관리자 코드 확인 (0411)
+        if admin_code == '0411':
             # 답변 저장
             Answer.objects.create(post=post, content=content)
         else:
@@ -536,7 +569,7 @@ def join_action(request, pk):
         action_type = request.POST.get('action_type') # 기능 종류 (delete 등)
         
         # 관리자 코드(4678)가 맞고, 삭제 요청이면
-        if admin_code == '4678' and action_type == 'delete':
+        if admin_code == '0411' and action_type == 'delete':
             post.delete() # DB에서 삭제
             return redirect('products:qna') # 목록으로 이동
             

@@ -16,7 +16,7 @@ SECRET_KEY = 'django-insecure-3x8w-r_8^p3@h8s!$p*d+p-e^y-e^w-g-^e^y-e^w-g'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = False
 
-ALLOWED_HOSTS = ['3.37.205.155', 'semodan.com', 'www.semodan.com', '127.0.0.1', 'localhost']
+ALLOWED_HOSTS = ['3.37.205.155', 'semodan.com', 'www.semodan.com', '127.0.0.1', 'localhost', '3.27.241.249']
 
 # Application definition
 # ----------------------------------------------------------------------
@@ -123,13 +123,12 @@ STATICFILES_DIRS = [
     os.path.join(BASE_DIR, 'config', 'static'), 
 ]
 
-
-
-# 2. 미디어 파일 (관리자가 업로드한 상품 이미지) 설정
-MEDIA_URL = '/media/'
+STATIC_ROOT = os.path.join(BASE_DIR, 'static')
 
 # 관리자가 업로드하는 파일들이 서버의 어디에 저장될지 설정 (디스크 경로)
 MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
+# 2. 미디어 파일 (관리자가 업로드한 상품 이미지) 설정
+MEDIA_URL = '/media/'
 
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

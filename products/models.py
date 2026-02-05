@@ -50,6 +50,14 @@ class Profile(models.Model):
     address = models.CharField(max_length=255, verbose_name='주소')
 
 class Order(models.Model):
+    STATUS_CHOICES = [
+        ('결제대기', '결제대기'),
+        ('결제완료', '결제완료'),
+        ('제작중', '제작중'),
+        ('배송중', '배송중'),
+        ('배송완료', '배송완료'),
+        ('주문취소', '주문취소'),
+    ]
     user = models.ForeignKey(User, on_delete=models.CASCADE, null=True, blank=True)
     product = models.ForeignKey('Product', on_delete=models.CASCADE)
     order_no = models.CharField(max_length=50, unique=True)
@@ -61,7 +69,12 @@ class Order(models.Model):
     size = models.CharField(max_length=10, verbose_name="사이즈", default="FREE")
     option_color = models.CharField(max_length=50, blank=True)
     option_size = models.TextField(blank=True) # 선택한 사이즈 (S, M 등)
-    status = models.CharField(max_length=20, default='입금대기')
+    status = models.CharField(
+        max_length=20, 
+        choices=STATUS_CHOICES, 
+        default='결제대기', 
+        verbose_name="주문상태"
+    )
     created_at = models.DateTimeField(auto_now_add=True)
     total_price = models.IntegerField(default=0)
     # 요청사항 필드가 없다면 추가 (views.py에서 쓰임)

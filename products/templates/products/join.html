@@ -201,16 +201,13 @@
                         
                         <div class="flex-grow-1 ps-2">
                             <a href="{% url 'products:join_detail' post.pk %}" class="qna-title text-decoration-none text-dark">
-                                
                                 {% if post.is_pinned %}<span class="text-danger me-1">[공지]</span>{% endif %}
                                 
-                                {{ post.title }}
-                                
                                 {% if post.is_secret %}
-                                    <i class="fas fa-lock text-muted ms-2 small"></i>
+                                    <i class="fas fa-lock text-muted me-2 small"></i>비밀글입니다.
+                                {% else %}
+                                    {{ post.title }}
                                 {% endif %}
-                                
-                                {% if post.images.exists %}<i class="fas fa-image text-muted ms-1 small"></i>{% endif %}
                             </a>
                             
                             <div class="qna-meta text-muted small mt-1">
