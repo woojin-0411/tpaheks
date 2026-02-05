@@ -505,7 +505,7 @@ def join_create(request):
         except Exception as e:
             print(f"DB 저장 실패: {e}")
 
-        # 4. 관리자 메일 발송
+        # 4. 관리자 메일 발송asdf
         subject = f"[세모단 문의 알림] {name}님의 글: {title}"
         send_mail(subject, combined_content, settings.EMAIL_HOST_USER, [settings.EMAIL_HOST_USER], fail_silently=True)
 
