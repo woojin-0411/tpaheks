@@ -154,14 +154,14 @@ ACCOUNT_LOGOUT_REDIRECT_URL = reverse_lazy('products:index')
 
 # [수정됨] 이메일 관련 설정 끄기
 # ACCOUNT_EMAIL_REQUIRED = False          # 이메일 필수 아님
-# ACCOUNT_USERNAME_REQUIRED = True        # 아이디는 필수
+ACCOUNT_USERNAME_REQUIRED = True        # 아이디는 필수
 ACCOUNT_EMAIL_VERIFICATION = 'none'     # 이메일 인증 안 함
 
 # 로그인 수단: 아이디(username)로만 로그인
 ACCOUNT_LOGIN_METHODS = {'username'} 
 
 # 회원가입 입력 항목: 이메일 빼고 'username'만 남김
-ACCOUNT_SIGNUP_FIELDS = ['username']
+#ACCOUNT_SIGNUP_FIELDS = ['username']
 
 SOCIALACCOUNT_LOGIN_ON_GET = True
 # ----------------------------------------------------------------------
@@ -207,15 +207,12 @@ AUTHENTICATION_BACKENDS = [
 LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/'
 
-# 이메일 인증 설정 (선택사항: 'mandatory'로 하면 이메일 인증 필수)
-ACCOUNT_EMAIL_VERIFICATION = 'none'
-
-ACCOUNT_FORMS = {
-    'signup': 'products.forms.CustomSignupForm',
-}
+##ACCOUNT_FORMS = {
+##    'signup': 'products.forms.CustomSignupForm',
+##}
 
 # 회원가입 시 커스텀 폼 사용 설정
-ACCOUNT_FORMS = {'signup': 'products.forms.CustomSignupForm'}
+##ACCOUNT_FORMS = {'signup': 'products.forms.CustomSignupForm'}
 
 ACCOUNT_AUTHENTICATION_METHOD = 'username' 
 ACCOUNT_EMAIL_REQUIRED = True

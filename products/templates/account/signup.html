@@ -1,39 +1,54 @@
 {% extends "products/base.html" %}
+{% load static %}
+{% load socialaccount %}
+
+{% block title %}회원가입 | 세모단{% endblock %}
 
 {% block content %}
-<div class="container py-5">
+<div class="container mt-5 mb-5">
     <div class="row justify-content-center">
-        <div class="col-lg-5 col-md-7">
-            <div class="card border-0 shadow-lg" style="border-radius: 25px; overflow: hidden;">
-                <div class="card-header bg-orange text-white text-center py-4 border-0">
-                    <h3 class="fw-bold m-0 font-heavy">회원가입</h3>
+        <div class="col-md-6 col-lg-5">
+            <div class="card border-0 shadow-sm rounded-4 p-4">
+                <div class="text-center mb-4">
+                    <h2 class="fw-bold">회원가입</h2>
+                    <p class="text-muted">세모단에 오신 것을 환영합니다!</p>
                 </div>
-                <div class="card-body p-5">
-                    <form method="POST" action="{% url 'account_signup' %}">
-                        {% csrf_token %}
-                        
-                        {% for field in form %}
+
+                <form class="signup" id="signup_form" method="post" action="{% url 'account_signup' %}">
+                    {% csrf_token %}
+                    
+                    {% for field in form %}
                         <div class="mb-3">
-                            <label class="form-label fw-bold small ms-1 text-secondary">{{ field.label }}</label>
-                            {{ field }}
-                            {% if field.help_text %}
-                                <div class="form-text small text-muted">{{ field.help_text }}</div>
+                            <label class="form-label fw-bold">{{ field.label }}</label>
+                            
+                            <div class="input-group">
+                                {{ field }} 
+                            </div>
+                            
+                            {% if field.errors %}
+                                <div class="text-danger small mt-1">
+                                    {{ field.errors.0 }}
+                                </div>
                             {% endif %}
-                            {% for error in field.errors %}
-                                <div class="text-danger small mt-1 ms-1">* {{ error }}</div>
-                            {% endfor %}
+                            
+                            {% if field.help_text %}
+                                <small class="text-muted">{{ field.help_text }}</small>
+                            {% endif %}
                         </div>
-                        {% endfor %}
+                    {% endfor %}
 
-                        <button type="submit" class="btn btn-dark w-100 py-3 rounded-pill fw-bold fs-5 mt-3">
-                            가입 완료하기
-                        </button>
-                    </form>
+                    <button type="submit" class="btn btn-dark w-100 py-3 rounded-pill fw-bold mt-3">
+                        가입 완료하기
+                    </button>
+                </form>
 
-                    <div class="text-center mt-4">
-                        <span class="text-muted small">이미 계정이 있으신가요?</span>
-                        <a href="{% url 'account_login' %}" class="text-orange fw-bold text-decoration-none ms-2">로그인</a>
-                    </div>
+                <hr class="my-4">
+
+                <div class="text-center">
+                    <p class="text-muted small">이미 계정이 있으신가요?</p>
+                    <a href="{% url 'account_login' %}" class="text-decoration-none fw-bold text-orange">
+                        로그인 하러가기
+                    </a>
                 </div>
             </div>
         </div>
@@ -41,9 +56,11 @@
 </div>
 
 <script>
-    // 장고가 만든 input들에 부트스트랩 스타일 강제 적용
-    document.querySelectorAll('input').forEach(el => {
-        el.classList.add('form-control', 'form-control-lg', 'rounded-4', 'bg-light', 'border-0');
+    // 모든 input 태그에 부트스트랩 클래스 추가
+    document.querySelectorAll('input').forEach(input => {
+        input.classList.add('form-control');
+        input.classList.add('rounded-3');
+        input.style.padding = '12px';
     });
 </script>
 {% endblock %}
