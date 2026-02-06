@@ -1,6 +1,7 @@
 from pathlib import Path
 import os
 from django.urls import reverse_lazy # lazy하게 URL을 참조하기 위해 추가
+import environ
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 # Pathlib 기반으로 BASE_DIR을 정의하여 경로 관리를 더 현대적인 방식으로 변경합니다.
@@ -9,12 +10,19 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # 만약 위의 Pathlib 정의가 오류를 일으킨다면, 기존 코드를 사용하세요:
 # BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
-
+env = environ.Env(
+    DEBUG=(bool, True) # .env 파일이 없으면 기본적으로 DEBUG=True (로컬 개발 모드)
+)
+environ.Env.read_env(os.path.join(BASE_DIR, '.env'))
+DEBUG = env('DEBUG')
+SECRET_KEY = env('SECRET_KEY', default='django-insecure-local-key-example')
+ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
+EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='fake_password')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-3x8w-r_8^p3@h8s!$p*d+p-e^y-e^w-g-^e^y-e^w-g' 
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = False
+DEBUG = True
 
 ALLOWED_HOSTS = ['3.37.205.155', 'semodan.com', 'www.semodan.com', '127.0.0.1', 'localhost', '3.27.241.249']
 
@@ -178,9 +186,7 @@ EMAIL_USE_TLS = True           # 보안 연결 켜기
 EMAIL_USE_SSL = False          # (TLS를 쓰므로 SSL은 끔)
 
 # 보내는 사람 이메일 (여기에 semodaninfo 주소를 적으세요)
-EMAIL_HOST_USER = 'semodaninfo@gmail.com'
-
-EMAIL_HOST_PASSWORD = 'fake_number' 
+EMAIL_HOST_USER = 'semodaninfo@gmail.com' 
 
 # (선택) 기본 보내는 사람 이름 설정
 DEFAULT_FROM_EMAIL = EMAIL_HOST_USER
