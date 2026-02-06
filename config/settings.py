@@ -20,7 +20,8 @@ ALLOWED_HOSTS = env.list('ALLOWED_HOSTS', default=['*'])
 EMAIL_HOST_PASSWORD = env('EMAIL_HOST_PASSWORD', default='fake_password')
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = 'django-insecure-3x8w-r_8^p3@h8s!$p*d+p-e^y-e^w-g-^e^y-e^w-g' 
-
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+ACCOUNT_DEFAULT_HTTP_PROTOCOL = 'https'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
