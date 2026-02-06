@@ -125,6 +125,10 @@
         .kakao-float-btn:hover { transform: scale(1.1) rotate(10deg); }
         .kakao-icon { color: #3A1D1D; font-size: 30px; }
         
+        .navbar-nav .nav-link, .navbar a {
+            white-space: nowrap; /* 글자가 길어도 절대 줄바꿈 하지 않음 */
+        }
+
         /* 모바일 메뉴 박스 디자인 */
         @media (max-width: 991px) {
             .navbar-collapse {
@@ -134,6 +138,15 @@
             .nav-link { margin: 5px 0; }
             .auth-area { margin-top: 20px; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
         }
+
+        @media (max-width: 1200px) {
+            .navbar-nav .nav-link {
+                font-size: 0.9rem; /* 원래보다 작게 */
+                padding-left: 8px !important;  /* 좌우 여백 줄이기 */
+                padding-right: 8px !important;
+            }
+        }        
+
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">

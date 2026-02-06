@@ -135,18 +135,25 @@
             <h1 class="product-title">{{ product.name }}</h1>
             <div class="product-price">{{ product.price|intcomma }}원</div>
 
-            <div class="option-form-box p-4 text-center">
-                <h5 class="fw-bold mb-3">나만의 디자인을 만들어보세요!</h5>
-                <p class="text-muted small mb-4">
-                    원하는 로고와 텍스트를 넣어<br>
-                    세상에 하나뿐인 옷을 제작할 수 있습니다.
+            <div class="option-form-box p-4">
+                <h5 class="fw-bold mb-3">상품 주문</h5>
+                
+                <p class="text-muted small mb-3">
+                    남은 재고: <strong id="stock-display" class="text-danger">{{ product.stock }}</strong> 개
                 </p>
 
-                <a href="{% url 'products:product_custom_editor' product.code %}" 
-                class="btn btn-dark w-100 py-3 rounded-pill fw-bold" 
-                style="font-size: 1.1rem;">
-                    <i class="fas fa-magic me-2"></i>디자인 및 주문하기
-                </a>
+                <form action="{% url 'products:product_custom_editor' product.code %}" method="GET" onsubmit="return checkStock(event)">
+                    
+                    <div class="mb-3">
+                        <label for="quantity" class="form-label fw-bold">수량</label>
+                        <input type="number" id="quantity" name="quantity" 
+                            class="form-control" value="1" min="1" max="{{ product.stock }}">
+                    </div>
+
+                    <button type="submit" id="order-btn" class="btn btn-dark w-100 py-3 rounded-pill fw-bold" style="font-size: 1.1rem;">
+                        <i class="fas fa-check me-2"></i>주문하기
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -211,4 +218,29 @@
         {% endfor %}
     </div>
 </div>
+
+<script>
+    function checkStock(event) {
+        const input = document.getElementById('quantity');
+        const maxStock = parseInt("{{ product.stock }}"); // 서버 재고량
+        const orderCount = parseInt(input.value);
+        const btn = document.getElementById('order-btn');
+
+        // (1) 재고 초과 방지
+        if (orderCount > maxStock) {
+            alert("죄송합니다. 현재 재고가 " + maxStock + "개 남았습니다.");
+            input.value = maxStock; // 최대값으로 자동 변경
+            return false; // 전송 막기
+        }
+
+        // (2) 로딩 표시 (버튼 비활성화)
+        btn.innerText = "처리 중입니다... ⏳";
+        btn.disabled = true;
+        
+        // 버튼을 비활성화하면 submit이 안 될 수 있으므로, 폼을 직접 제출
+        // (단, onsubmit에서 return true를 기대하는 경우엔 아래 줄 필요 없음. 
+        //  여기서는 버튼만 끄고 폼 전송은 자연스럽게 진행되도록 둡니다.)
+        return true; 
+    }
+</script>
 {% endblock %}
