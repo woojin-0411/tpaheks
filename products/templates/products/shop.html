@@ -805,6 +805,85 @@
             });
         }, 200);
     }
+    // [추가] 폼 전송 전, 4면 디자인을 자동으로 캡처하는 로직
+    // (이게 없으면 메일에 사진이 안 옵니다!)
+    const form = document.getElementById('quote-form');
+    
+    form.addEventListener('submit', async function(e) {
+        e.preventDefault(); // 1. 일단 전송 멈춤
+        
+        // 로딩 표시
+        const btn = form.querySelector('button[type="submit"]');
+        const originalText = btn.innerText;
+        btn.innerText = '이미지 생성중...';
+        btn.disabled = true;
+
+        try {
+            // UI 정리 (선택 박스 등 숨기기)
+            canvas.discardActiveObject();
+            canvas.renderAll();
+            document.getElementById('obj-controls').style.display = 'none';
+
+            // 현재 작업 상태 저장
+            designStates[currentView] = JSON.stringify(canvas.toJSON());
+
+            // 4면 순회하며 캡처 시작
+            const views = ['front', 'back', 'left', 'right'];
+            
+            for (let v of views) {
+                // 뷰 강제 전환
+                currentView = v;
+                updateCanvasImages(); // 배경 옷 바꾸기
+                
+                // 인쇄 영역 위치 맞추기
+                const area = printAreas[v];
+                const wrapper = document.getElementById('print-area-wrapper');
+                wrapper.style.top = area.top; 
+                wrapper.style.left = area.left; 
+                wrapper.style.width = area.width; 
+                wrapper.style.height = area.height;
+                
+                canvas.setDimensions({width: wrapper.clientWidth, height: wrapper.clientHeight});
+
+                // 디자인 불러오기
+                canvas.clear();
+                if (designStates[v]) {
+                    await new Promise(resolve => {
+                        canvas.loadFromJSON(designStates[v], function() {
+                            canvas.renderAll();
+                            resolve();
+                        });
+                    });
+                }
+                
+                // ★ 렌더링 대기 (이미지가 뜰 시간을 줌)
+                await new Promise(r => setTimeout(r, 250));
+
+                // 캡처 (html2canvas)
+                const captureElement = document.querySelector('.shirt-box');
+                const canvasData = await html2canvas(captureElement, {
+                    scale: 1.5, // 화질 (1.5배)
+                    useCORS: true, 
+                    logging: false
+                });
+
+                // 데이터를 hidden input에 넣기
+                const dataUrl = canvasData.toDataURL('image/jpeg', 0.8);
+                document.getElementById(`captured_${v}`).value = dataUrl;
+                
+                console.log(`${v} 캡처 완료`);
+            }
+
+            // 4면 캡처가 다 끝나면 -> 진짜 전송!
+            form.submit();
+
+        } catch (err) {
+            console.error("캡처 에러:", err);
+            alert("이미지 생성 중 오류가 발생했습니다.");
+            btn.innerText = originalText;
+            btn.disabled = false;
+        }
+    });
 
     function requestPay() {
         document.getElementById('quote-form').submit();
