@@ -310,6 +310,9 @@ def order_create(request):
             # ========================================================
             # ★ [메일 발송 1] 고객에게 보내는 "심플한 안내 메일"
             # ========================================================
+            # ========================================================
+            # ★ [메일 발송 1] 고객에게 보내는 메일 (이미지 첨부 기능 추가됨)
+            # ========================================================
             if customer_email:
                 try:
                     subject_cust = f"[세모단] {customer_name}님, 주문이 정상 접수되었습니다."
@@ -318,6 +321,7 @@ def order_create(request):
                         <h2 style="color:#ff6b00;">SEMODAN</h2>
                         <h3>{customer_name}님, 주문해주셔서 감사합니다.</h3>
                         <p>고객님의 주문이 정상적으로 접수되었습니다.</p>
+                        <p>디자인하신 <strong>시안 이미지는 첨부파일</strong>로 확인하실 수 있습니다.</p>
                         <hr>
                         <p><strong>주문번호:</strong> {order_no}</p>
                         <p><strong>상품명:</strong> {product_name}</p>
@@ -327,9 +331,32 @@ def order_create(request):
                         빠르게 제작하여 배송해 드리겠습니다.</p>
                     </div>
                     """
-                    # 고객에게만 발송
-                    send_mail(subject_cust, "", settings.EMAIL_HOST_USER, [customer_email], html_message=html_cust, fail_silently=True)
-                    print("✅ 고객용 메일 발송 성공")
+                    
+                    # 1. 이메일 객체 생성 (EmailMultiAlternatives 사용)
+                    msg = EmailMultiAlternatives(subject_cust, "주문이 접수되었습니다.", settings.EMAIL_HOST_USER, [customer_email])
+                    msg.attach_alternative(html_cust, "text/html") # HTML 본문 설정
+
+                    # 2. ★ 이미지 파일 변환 및 첨부 (핵심!)
+                    for view_name, base64_data in images_data.items():
+                        if base64_data and "base64," in base64_data:
+                            try:
+                                # "data:image/jpeg;base64,..." 헤더 제거
+                                img_format, imgstr = base64_data.split(';base64,') 
+                                ext = img_format.split('/')[-1] # png, jpeg 등 확장자 추출
+                                
+                                # Base64 디코딩 (문자열 -> 이미지 파일 데이터)
+                                file_data = base64.b64decode(imgstr)
+                                
+                                # 메일에 첨부 (파일명, 데이터, MIME타입)
+                                # 예: front_design.png
+                                msg.attach(f'{view_name}_design.{ext}', file_data, f'image/{ext}')
+                            except Exception as e:
+                                print(f"이미지 첨부 중 오류({view_name}): {e}")
+
+                    # 3. 전송
+                    msg.send(fail_silently=True)
+                    print("✅ 고객용 메일 발송 성공 (이미지 첨부됨)")
+
                 except Exception as e:
                     print(f"❌ 고객용 메일 실패: {e}")
 
