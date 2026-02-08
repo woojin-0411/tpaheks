@@ -307,11 +307,7 @@ def order_create(request):
                 status='견적요청'
             )
 
-            # ========================================================
-            # ★ [메일 발송 1] 고객에게 보내는 "심플한 안내 메일"
-            # ========================================================
-            # ========================================================
-            # ★ [메일 발송 1] 고객에게 보내는 메일 (이미지 첨부 기능 추가됨)
+            # ★ [메일 발송 1] 고객에게 보내는 메일 (수정됨: 이미지 + 로고 첨부)
             # ========================================================
             if customer_email:
                 try:
@@ -321,7 +317,7 @@ def order_create(request):
                         <h2 style="color:#ff6b00;">SEMODAN</h2>
                         <h3>{customer_name}님, 주문해주셔서 감사합니다.</h3>
                         <p>고객님의 주문이 정상적으로 접수되었습니다.</p>
-                        <p>디자인하신 <strong>시안 이미지는 첨부파일</strong>로 확인하실 수 있습니다.</p>
+                        <p>디자인하신 <strong>시안 이미지(4면)와 업로드하신 로고</strong>는 첨부파일로 확인하실 수 있습니다.</p>
                         <hr>
                         <p><strong>주문번호:</strong> {order_no}</p>
                         <p><strong>상품명:</strong> {product_name}</p>
@@ -332,42 +328,45 @@ def order_create(request):
                     </div>
                     """
                     
-                    # 1. 이메일 객체 생성 (EmailMultiAlternatives 사용)
+                    # 1. 이메일 객체 생성
                     msg = EmailMultiAlternatives(subject_cust, "주문이 접수되었습니다.", settings.EMAIL_HOST_USER, [customer_email])
-                    msg.attach_alternative(html_cust, "text/html") # HTML 본문 설정
+                    msg.attach_alternative(html_cust, "text/html") 
 
-                    # 2. ★ 이미지 파일 변환 및 첨부 (핵심!)
+                    # 2. ★ [추가 1] 4면 디자인 이미지 첨부 (Base64 -> 파일 변환)
                     for view_name, base64_data in images_data.items():
                         if base64_data and "base64," in base64_data:
                             try:
-                                # "data:image/jpeg;base64,..." 헤더 제거
+                                # 헤더 분리 및 디코딩
                                 img_format, imgstr = base64_data.split(';base64,') 
-                                ext = img_format.split('/')[-1] # png, jpeg 등 확장자 추출
-                                
-                                # Base64 디코딩 (문자열 -> 이미지 파일 데이터)
+                                ext = img_format.split('/')[-1] # png, jpeg 등
                                 file_data = base64.b64decode(imgstr)
                                 
-                                # 메일에 첨부 (파일명, 데이터, MIME타입)
-                                # 예: front_design.png
+                                # 메일에 첨부 (파일명: front_design.png 등)
                                 msg.attach(f'{view_name}_design.{ext}', file_data, f'image/{ext}')
                             except Exception as e:
-                                print(f"이미지 첨부 중 오류({view_name}): {e}")
+                                print(f"디자인 이미지 첨부 오류({view_name}): {e}")
 
-                    # 3. 전송
+                    # 3. ★ [추가 2] 사용자가 업로드한 로고 파일 첨부
+                    if 'logo_file' in request.FILES:
+                        for f in request.FILES.getlist('logo_file'):
+                            try:
+                                f.seek(0) # 파일 포인터 초기화 (중요)
+                                msg.attach(f.name, f.read(), f.content_type)
+                            except Exception as e:
+                                print(f"로고 파일 첨부 오류: {e}")
+
+                    # 4. 전송
                     msg.send(fail_silently=True)
-                    print("✅ 고객용 메일 발송 성공 (이미지 첨부됨)")
+                    print("✅ 고객용 메일 발송 성공 (이미지+로고 첨부됨)")
 
                 except Exception as e:
                     print(f"❌ 고객용 메일 실패: {e}")
 
-
-            # ========================================================
-            # ★ [메일 발송 2] 관리자(나)에게 보내는 "상세 작업지시서" (기존 코드 복원)
-            # ========================================================
+            # ★ [메일 발송 2] 관리자(나)에게 보내는 "상세 작업지시서" (수정됨)
             try:
                 subject_admin = f"[주문 접수] {customer_name}님 - {product_name} (No.{order_no})"
                 
-                # 관리자용 상세 HTML (테이블 + 작업지시서 포함)
+                # 관리자용 상세 HTML (이미지 미리보기 포함)
                 html_admin = f"""
                 <div style="font-family: 'Malgun Gothic', sans-serif; max-width: 700px; border: 1px solid #333; padding: 20px;">
                     <h2 style="background:#333; color:#fff; padding:10px;">SEMODAN 주문서 (관리자용)</h2>
@@ -389,41 +388,56 @@ def order_create(request):
                         <div style="font-size: 14px; line-height: 1.6;">{tech_pack}</div>
                     </div>
 
-                    <h3>디자인 시안 (4면)</h3>
+                    <h3>디자인 시안 (4면 미리보기)</h3>
                     <div style="display: flex; gap: 10px; flex-wrap: wrap;">
                         <div style="text-align:center; border:1px solid #eee; padding:5px;"><img src="cid:front_img" style="width:150px;"><br>앞면</div>
                         <div style="text-align:center; border:1px solid #eee; padding:5px;"><img src="cid:back_img" style="width:150px;"><br>뒷면</div>
                         <div style="text-align:center; border:1px solid #eee; padding:5px;"><img src="cid:left_img" style="width:150px;"><br>왼팔</div>
                         <div style="text-align:center; border:1px solid #eee; padding:5px;"><img src="cid:right_img" style="width:150px;"><br>오른팔</div>
                     </div>
+                    <p style="color:red; font-weight:bold;">※ 원본 로고 파일은 첨부파일을 확인하세요.</p>
                 </div>
                 """
 
-                # 관리자에게만 발송
-                msg = EmailMultiAlternatives(subject_admin, "HTML 메일입니다.", settings.EMAIL_HOST_USER, [settings.EMAIL_HOST_USER])
-                msg.attach_alternative(html_admin, "text/html")
+                # 1. 관리자용 메일 객체 생성
+                msg_admin = EmailMultiAlternatives(subject_admin, "HTML 메일입니다.", settings.EMAIL_HOST_USER, [settings.EMAIL_HOST_USER])
+                msg_admin.attach_alternative(html_admin, "text/html")
 
-                # 이미지 첨부 (CID 방식 - 관리자 메일에만 첨부하면 됨)
-                for key, data in images_data.items():
-                    if data and 'base64,' in data:
+                # 2. ★ [수정] 4면 디자인 이미지 첨부 (본문 삽입용 CID + 파일 첨부 둘 다)
+                for view_name, base64_data in images_data.items():
+                    if base64_data and 'base64,' in base64_data:
                         try:
-                            img_format, imgstr = data.split(';base64,') 
+                            # 변환
+                            img_format, imgstr = base64_data.split(';base64,') 
                             img_decoded = base64.b64decode(imgstr)
+                            ext = img_format.split('/')[-1]
+
+                            # (1) HTML 본문에 삽입할 CID 이미지 (미리보기용)
                             mime_img = MIMEImage(img_decoded)
-                            mime_img.add_header('Content-ID', f'<{key}_img>')
-                            msg.attach(mime_img)
-                        except: pass
+                            mime_img.add_header('Content-ID', f'<{view_name}_img>') # cid:front_img 와 매칭
+                            msg_admin.attach(mime_img)
+
+                            # (2) 다운로드용 일반 파일 첨부
+                            msg_admin.attach(f'{view_name}_design.{ext}', img_decoded, f'image/{ext}')
+                        except Exception as e:
+                            print(f"관리자 이미지 첨부 오류({view_name}): {e}")
                 
-                # 로고 파일 첨부
+                # 3. ★ [수정] 사용자가 업로드한 로고 파일 첨부 (가장 중요!)
                 if 'logo_file' in request.FILES:
                     for f in request.FILES.getlist('logo_file'):
-                        msg.attach(f.name, f.read(), f.content_type)
+                        try:
+                            f.seek(0) # 파일 포인터 초기화
+                            # 파일명, 내용, 타입 순서로 첨부
+                            msg_admin.attach(f.name, f.read(), f.content_type)
+                        except Exception as e:
+                            print(f"로고 파일 첨부 실패: {e}")
 
-                msg.send() # 관리자 전송!
-                print("✅ 관리자용 상세 메일 발송 성공")
+                # 4. 전송
+                msg_admin.send(fail_silently=True)
+                print("✅ 관리자용 상세 메일 발송 성공 (이미지+로고 포함)")
 
             except Exception as e:
-                print(f"❌ 관리자용 메일 실패: {e}")
+                print(f"❌ 관리자용 메일 발송 실패: {e}")
             
             # --------------------------------------------------------
             # 4. 완료 페이지로 이동
