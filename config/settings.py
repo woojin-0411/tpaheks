@@ -172,7 +172,7 @@ SOCIALACCOUNT_PROVIDERS = {
     'kakao': {
         # [중요] 여기에 'account_email'이 있으면 절대 안 됩니다!
         # 카카오 설정 화면에 있는 ID 그대로 'profile_nickname'과 'profile_image'만 적어야 합니다.
-        'SCOPE': ['profile_nickname', 'profile_image'], 
+        'SCOPE': ['profile_nickname', 'profile_image', 'account_email'],
     }
 }
 # [settings.py 파일 하단]

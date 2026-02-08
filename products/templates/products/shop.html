@@ -5,6 +5,7 @@
 {% block title %}커스텀 에디터 | {{ product.name }}{% endblock %}
 
 {% block content %}
+<script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.1/fabric.min.js"></script>
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jqueryui-touch-punch/0.2.3/jquery.ui.touch-punch.min.js"></script>
@@ -19,11 +20,32 @@
     .editor-container { max-width: 1400px; margin: 40px auto; padding: 0 20px; display: flex; gap: 40px; min-height: 850px; }
     
     .left-column { flex: 1.6; display: flex; flex-direction: column; gap: 20px; }
-    .canvas-wrapper { background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); display: flex; justify-content: center; align-items: center; position: relative; overflow: hidden; border: 1px solid #eef0f2; min-height: 650px; }
+    /* [수정] 캔버스 래퍼 및 인쇄 영역 스타일 */
+    .canvas-wrapper { 
+        background: white; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05); 
+        display: flex; justify-content: center; align-items: center; position: relative; 
+        overflow: visible; border: 1px solid #eef0f2; min-height: 750px; /* 높이 약간 증가 */
+    }
     .shirt-box { position: relative; width: 600px; height: 700px; background: #fff; }
-    
-    /* ★ 원본 비율 그대로 보기 (contain) */
-    .base-shirt-img { width: 100%; height: 100%; object-fit: contain; position: absolute; top:0; left:0; z-index: 1; pointer-events: none; transition: opacity 0.3s; }
+
+    .base-shirt-img { 
+        width: 100%; height: 100%; object-fit: contain; 
+        position: absolute; top:0; left:0; z-index: 1; pointer-events: none; 
+    }
+
+    /* ★ 인쇄 영역 대폭 확대 (상하좌우 시원하게) */
+    .print-area-container {
+        position: absolute; 
+        top: 10%; left: 15%; /* 위치 조정 */
+        width: 70%; height: 80%; /* 크기 확대 (기존 50% -> 70%) */
+        border: 1px dashed rgba(0,0,0,0.1); /* 평소엔 흐릿하게 */
+        z-index: 10;
+    }
+    .print-area-container:hover { border-color: #ff6b00; } /* 마우스 올리면 영역 표시 */
+
+    /* Fabric.js 캔버스 스타일 */
+    .canvas-container { margin: 0 auto; }
+    .canvas-container canvas { outline: none; }
     .print-area { position: absolute; border: 2px dashed #ccc; z-index: 10; overflow: hidden; box-sizing: border-box; background-color: rgba(0, 0, 0, 0.02); }
     
     /* 디자인 요소 & AI 버튼 스타일 */
@@ -123,7 +145,10 @@
         <div class="canvas-wrapper">
             <div class="shirt-box">
                 <img id="shirt-img" src="" class="base-shirt-img">
-                <div id="print-area" class="print-area"></div>
+                
+                <div id="print-area-wrapper" class="print-area-container">
+                    <canvas id="tshirt-canvas"></canvas>
+                </div>
             </div>
         </div>
         
@@ -348,15 +373,32 @@
     </div>
 </div>
 
+<div id="obj-controls" style="display:none; position:absolute; z-index:1000; background:rgba(0,0,0,0.8); padding:5px; border-radius:5px; gap:5px;">
+    <button class="btn btn-sm btn-primary ai-btn" onclick="runAI()">✨ AI 누끼</button>
+    <button class="btn btn-sm btn-success restore-btn" onclick="runRestore()" style="display:none;">↩ 복구</button>
+    <button class="btn btn-sm btn-danger" onclick="runDelete()">🗑 삭제</button>
+</div>
 <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
 <script>
+    // [1] 전역 변수
+    let canvas;
+    const PX_PER_CM = 12; // 1cm = 12px (600px = 50cm 기준)
+    const PRICE_S = 2300, PRICE_M = 4400, PRICE_L = 5500;
     const basePrice = {{ product.price }};
+    let designStates = { 'front': null, 'back': null, 'left': null, 'right': null };
+    let currentView = 'front';
+    let currentColor = '{% if colors %}{{ colors.0.color_name }}{% else %}default{% endif %}';
+
+    const printAreas = {
+        'front': { top: '15%', left: '25%', width: '50%', height: '60%' },
+        'back':  { top: '15%', left: '25%', width: '50%', height: '60%' },
+        'left':  { top: '22%', left: '40%', width: '30%', height: '30%' },
+        'right': { top: '22%', left: '40%', width: '30%', height: '30%' }
+    };
+
     const mainImageUrl = "{% if product.image %}{{ product.image.url }}{% endif %}";
-    
-    // 데이터 설정
     const productData = {
         'default': { 'front': mainImageUrl, 'back': mainImageUrl, 'left': mainImageUrl, 'right': mainImageUrl },
-        {% if colors %}
         {% for c in colors %}
         '{{ c.color_name }}': {
             'front': "{% if c.image_front %}{{ c.image_front.url }}{% elif product.image %}{{ product.image.url }}{% endif %}",
@@ -365,525 +407,410 @@
             'right': "{% if c.image_right %}{{ c.image_right.url }}{% elif product.image %}{{ product.image.url }}{% endif %}"
         },
         {% endfor %}
-        {% endif %}
     };
 
-    let currentView = 'front';
-    let currentColor = 'default';
-    {% if colors %}currentColor = "{{ colors.0.color_name }}";{% endif %}
-    
-    let viewObjects = { 'front': '', 'back': '', 'left': '', 'right': '' };
-    
-    const printAreas = {
-        'front': { top: '15%', left: '25%', width: '50%', height: '60%' },
-        'back':  { top: '15%', left: '25%', width: '50%', height: '60%' },
-        'left':  { top: '20%', left: '37%', width: '30%', height: '30%' },
-        'right': { top: '20%', left: '37%', width: '30%', height: '30%' }
-    };
+    // [2] 초기화 및 이벤트
+    document.addEventListener('DOMContentLoaded', function() {
+        // ★ [해결 4] 조작 핸들 디자인 개선 (크고 예쁘게)
+        fabric.Object.prototype.set({
+            transparentCorners: false, // 채워진 핸들
+            cornerColor: '#ffffff',    // 흰색
+            cornerStrokeColor: '#333333', // 검은 테두리
+            borderColor: '#333333',    // 박스 테두리
+            cornerSize: 12,            // 핸들 크기 키움 (기존보다 큼)
+            padding: 10,               // 여백 확보
+            cornerStyle: 'circle'      // 동그라미 모양
+        });
 
-    $(document).ready(function() {
-        changeView('front'); 
-        $('#form-color-selected-input').val(currentColor);
-        updateCanvasImages(); 
+        const wrapper = document.getElementById('print-area-wrapper');
+        canvas = new fabric.Canvas('tshirt-canvas', {
+            width: wrapper.clientWidth, height: wrapper.clientHeight, preserveObjectStacking: true
+        });
 
-        $('#order-color-select').change(function() {
-            currentColor = $(this).val();
-            $('#form-color-selected').val(currentColor);
-            $('#form-color-selected-input').val(currentColor);
+        changeView('front');
+        updateCanvasImages();
+        document.getElementById('form-color-selected').value = currentColor;
+
+        // 이벤트 연결
+        canvas.on('object:added', calculateTotal);
+        canvas.on('object:modified', calculateTotal);
+        canvas.on('object:removed', () => { 
+            document.getElementById('obj-controls').style.display = 'none'; 
+            calculateTotal(); 
+        });
+        
+        // 메뉴 표시 및 위치 업데이트
+        canvas.on('selection:created', showControls);
+        canvas.on('selection:updated', showControls);
+        canvas.on('object:moving', showControls);
+        canvas.on('object:scaling', showControls);
+        canvas.on('selection:cleared', () => document.getElementById('obj-controls').style.display = 'none');
+
+        // 텍스트 클릭 시 도구창 동기화
+        canvas.on('selection:created', updateTools);
+        canvas.on('selection:updated', updateTools);
+
+        // 색상 변경
+        document.getElementById('order-color-select').addEventListener('change', function() {
+            currentColor = this.value;
+            document.getElementById('form-color-selected').value = currentColor;
             updateCanvasImages();
         });
 
-        $('#upload-btn').off('click').on('click', function(e){ 
-            e.preventDefault(); 
-            $('#real-file-input').val(''); // 파일 초기화 (같은 파일 다시 선택 가능하게)
-            $('#real-file-input').click(); 
-        });
-// [shop.html] $(document).ready 안에 붙여넣으세요!
-
-        // 1. [삭제 버튼] 클릭 기능
-        $(document).on('click', '.btn-delete', function(e) {
-            e.stopPropagation();
-            $(this).closest('.design-obj').remove(); // 묻지 않고 바로 삭제
-            calculateTotal();
-        });
-        
-        // 2. [원본 복구 버튼] 클릭 기능
-        $(document).on('click', '.btn-restore', function(e) {
-            e.stopPropagation();
-            const wrapper = $(this).closest('.design-obj');
-            const img = wrapper.find('img')[0];
-            
-            img.src = img.dataset.original; // 원본 이미지로 되돌리기
-            
-            $(this).hide(); // 복구 버튼 숨김
-            wrapper.find('.btn-ai-remove').show().text('누끼 제거'); // 누끼 버튼 보임
-        });
-
-        // 3. [AI 누끼 제거 버튼] 클릭 기능 (★ 문법 오류 수정됨!)
-        $(document).on('click', '.btn-ai-remove', function(e) {
-            e.stopPropagation();
-            const btn = $(this);
-            const wrapper = btn.closest('.design-obj');
-            const img = wrapper.find('img')[0];
-            const originalText = btn.text();
-            
-            // 작업 중 표시
-            btn.text('작업중..').prop('disabled', true);
-
-            // 1) 이미지 리사이징 (서버 부담 줄이기)
-            resizeImage(img.src, 800, function(resizedData) {
-                
-                // 2) 서버로 전송
-                fetch("/remove_background_ai/", {
-                    method: 'POST',
-                    body: JSON.stringify({image: resizedData}),
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-CSRFToken': '{{ csrf_token }}'
-                    }
-                })
-                .then(response => {
-                    if (!response.ok) throw new Error("서버 오류 (" + response.status + ")");
-                    return response.json();
-                })
-                .then(data => {
-                    if(data.status === 'success') {
-                        // 성공 시 이미지 교체
-                        img.src = data.image; 
-                        btn.hide().prop('disabled', false); // AI 버튼 숨김
-                        wrapper.find('.btn-restore').show(); // 복구 버튼 보임
-                    } else {
-                        alert('실패: ' + data.message);
-                        btn.text(originalText).prop('disabled', false);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    alert("AI 처리 중 오류가 발생했습니다.\n" + error);
-                    btn.text(originalText).prop('disabled', false);
-                });
-            });
-        });
-
-        // 4. [요소 선택] 기능
-        $(document).on('mousedown', '.design-obj', function(e) {
-            e.stopPropagation();
-            $('.design-obj').removeClass('selected');
-            $(this).addClass('selected');
-        });
-
-        // 5. [배경 클릭 시 선택 해제]
-        $(document).on('mousedown', '#print-area', function(e) {
-            if (e.target === this) {
-                $('.design-obj').removeClass('selected');
-            }
-        });
-        // [추가] 파일들을 담아둘 가상의 장바구니
-        const fileTransfer = new DataTransfer();
-
-        $('#real-file-input').off('change').on('change', function(e){ 
-            if(this.files && this.files.length > 0) {
-                // 1. 선택한 파일들을 장바구니에 담기
-                Array.from(this.files).forEach(file => {
-                    fileTransfer.items.add(file);
-                    
-                    // 2. 캔버스에 그리기 (시각적 확인용)
-                    const r = new FileReader();
-                    r.onload = ev => createDesignElement('img', ev.target.result);
-                    r.readAsDataURL(file);
-                });
-
-                // 3. input 태그의 파일 목록을 장바구니 내용으로 교체
-                this.files = fileTransfer.files;
-            }
-        });
-        
-        $('#print-area').click(function(e) { if(e.target === this) $('.design-obj').removeClass('selected'); });
-
-        $('#phone-input').on('input', function() {
-            let number = $(this).val().replace(/[^0-9]/g, "");
-            let phone = "";
-            if(number.length < 4) { return number; } 
-            else if(number.length < 7) { phone += number.substr(0, 3) + "-" + number.substr(3); } 
-            else if(number.length < 11) { phone += number.substr(0, 3) + "-" + number.substr(3, 3) + "-" + number.substr(6); } 
-            else { phone += number.substr(0, 3) + "-" + number.substr(3, 4) + "-" + number.substr(7); }
-            $(this).val(phone);
-        });
-
-        // [주문 전송]
-        $('#quote-form').submit(async function(e) {
+        // 이미지 업로드
+        document.getElementById('upload-btn').addEventListener('click', function(e) {
             e.preventDefault();
-            const btn = $(this).find('button[type="submit"]');
-            btn.text('처리중...').prop('disabled', true);
-            
-            viewObjects[currentView] = $('#print-area').html();
-            calculateTechPack();
+            document.getElementById('real-file-input').value = '';
+            document.getElementById('real-file-input').click();
+        });
 
-            $('.obj-controls').hide(); 
-            $('.design-obj').css('border','none');
+        document.getElementById('real-file-input').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if(!file) return;
+            const reader = new FileReader();
+            reader.onload = function(f) {
+                fabric.Image.fromURL(f.target.result, function(img) {
+                    img.scaleToWidth(200);
+                    canvas.add(img);
+                    canvas.centerObject(img);
+                    canvas.setActiveObject(img);
+                    canvas.renderAll();
+                });
+            };
+            reader.readAsDataURL(file);
+        });
 
-            const views = ['front', 'back', 'left', 'right'];
-            for(let v of views) {
-                currentView = v; updateCanvasImages();
-                const area = printAreas[v];
-                $('#print-area').css({top:area.top, left:area.left, width:area.width, height:area.height}).html(viewObjects[v] || '');
+        // ★ [해결 1] 글꼴 변경 (더 강력하게 처리)
+        document.getElementById('font-select').addEventListener('change', function() {
+            const obj = canvas.getActiveObject();
+            if (obj && (obj.type === 'text' || obj.type === 'i-text')) {
+                // 값 예: "'Do Hyeon', sans-serif" -> "Do Hyeon"
+                let fontName = this.value.split(',')[0]; 
+                fontName = fontName.replace(/['"]/g, '').trim(); 
                 
-                await new Promise(r => setTimeout(r, 500));
-                
-                try {
-                    const canvas = await html2canvas(document.querySelector('.shirt-box'), {scale: 1.5, useCORS: true});
-                    $(`#captured_${v}`).val(canvas.toDataURL('image/jpeg', 0.8));
-                } catch(err) { console.log("캡쳐 오류:", err); }
-            }
-            
-            // ★ [수정됨] 폼의 action 속성을 동적으로 한 번 더 확인 (안전장치)
-            this.action = "{% url 'products:order_create' %}";
-            this.submit();
-        });
-
-        $('#sample-btn').click(function() {
-        
-        // ★★★ 아래 따옴표("") 안에 예시로 보여줄 이미지 주소(URL)를 넣으세요! ★★★
-        // 예: "https://mysite.com/media/sample_logo.png" 또는 구글 이미지 우클릭 -> 이미지 주소 복사
-        var sampleUrl = "https://cdn-icons-png.flaticon.com/512/25/25231.png"; 
-
-        // 캔버스에 이미지를 띄우는 함수 호출 (기존 기능 활용)
-        // width: 150 은 처음 떴을 때 크기입니다.
-        createDesignElement('img', sampleUrl, {width: 150}); 
-        });
-        $(document).on('mousedown', '#print-area', function(e) {
-            if (e.target === this) {
-                $('.design-obj').removeClass('selected');
+                obj.set("fontFamily", fontName);
+                canvas.requestRenderAll();
             }
         });
 
-        // 2. [핵심 수정] 이미지를 다시 클릭했을 때 선택되게 하기 (이벤트 위임)
-        // "문서야, 나중에 .design-obj라는 게 생기면 클릭 기능을 넣어줘" 라고 미리 약속하는 코드입니다.
-        $(document).on('mousedown', '.design-obj', function(e) {
-            e.stopPropagation(); // 부모(배경) 클릭 이벤트 막기
-            $('.design-obj').removeClass('selected'); // 다른 건 끄고
-            $(this).addClass('selected'); // 나만 켜기
-        });
-        // [추가 기능] 바로 결제 버튼 클릭 이벤트
-        // [수정된 코드] 팝업창 안의 '결제 진행' 버튼 클릭 시 실행
-        $('#start-payment-final').click(function () {
-            
-            // 1. 필수 입력값 확인 (이름, 전화번호 등)
-            var buyer_name = $('input[name="customer_name"]').val();
-            var buyer_tel = $('input[name="phone"]').val();
-            var buyer_addr = $('input[name="address"]').val();
-            
-            if (!buyer_name || !buyer_tel) {
-                alert("주문자 이름과 연락처를 입력해주세요.");
-                return;
+        // 텍스트 색상 변경
+        document.getElementById('text-color').addEventListener('input', function() {
+            const obj = canvas.getActiveObject();
+            if (obj && (obj.type === 'text' || obj.type === 'i-text')) {
+                obj.set('fill', this.value);
+                canvas.requestRenderAll();
             }
-            // 1. 팝업창 닫기
-            var modalEl = document.getElementById('paymentModal');
-            var modal = bootstrap.Modal.getInstance(modalEl); 
-            if (modal) { modal.hide(); }
-
-            // 2. 가격 가져오기 (강력한 숫자 변환)
-            var total_price_text = $('#total-price-display').text().trim();
-            // 숫자만 남기고 나머지(콤마, 원, 공백 등) 다 제거
-            var amount = parseInt(total_price_text.replace(/[^0-9]/g, '')); 
-
-            console.log("읽어온 가격 텍스트:", total_price_text); 
-            console.log("변환된 결제 금액:", amount);
-            // ★ 0원이거나 숫자가 아니면 결제 차단
-            if (!amount || amount <= 0) {
-                alert("결제할 금액이 0원입니다.\n상품 옵션을 선택했는지 확인해주세요.");
-                return; // 여기서 멈춤 (PG사 요청 안 함)
-            }
-
-            // 3. 결제 수단 선택값 가져오기
-            var selected_pg = $('input[name="pg_modal_select"]:checked').val();
-            if (!selected_pg) { selected_pg = 'html5_inicis'; }
-
-            // 4. 포트원 초기화
-            var IMP = window.IMP;
-            IMP.init('imp33630878'); // 식별코드 확인
-
-            // 4. 결제 요청 (여기 오타가 있으면 이미지가 안 뜹니다!)
-            IMP.request_pay({
-                pg: selected_pg,
-                pay_method: "card",
-                merchant_uid: "ORDER_" + new Date().getTime(),
-                name: "세모단 커스텀 의류",
-                amount: amount,
-                buyer_email: "test@test.com",
-                
-                // 콤마(,) 주의하세요!
-                buyer_name: $("input[name='customer_name']").val() || "구매자",
-                buyer_tel: $("input[name='phone']").val() || "010-0000-0000",
-                buyer_addr: $("input[name='address']").val() || "주소 미입력", // 👈 여기 콤마 필수!
-
-                // 모바일 결제 후 돌아올 주소
-                m_redirect_url: window.location.href 
-
-            }, function (rsp) {
-                if (rsp.success) {
-                    alert("결제가 완료되었습니다! 🎉\n\n[안내] 세모단 공식 카카오톡으로 주문 내역이 발송될 예정입니다.\n확인 버튼을 누르면 주문 조회 페이지로 이동합니다.");
-                    
-                    var form = $('#quote-form'); 
-                    if (form.find('input[name="imp_uid"]').length === 0) {
-                        form.append('<input type="hidden" name="imp_uid" value="' + rsp.imp_uid + '">');
-                        form.append('<input type="hidden" name="merchant_uid" value="' + rsp.merchant_uid + '">');
-                    }
-                    form.submit(); 
-                } else {
-                    alert("결제가 취소되었거나 실패했습니다.\n사유: " + rsp.error_msg);
-                }
-            });
         });
+
+        // 결제 버튼
+        document.getElementById('start-payment-final').addEventListener('click', requestPay);
     });
+
+    // [3] 기능 함수들
+    
+    // ★ [해결 2] 버튼 메뉴 위치 고정 (객체 중앙 상단)
+    function showControls() {
+        const obj = canvas.getActiveObject();
+        const controls = document.getElementById('obj-controls');
+        
+        if (!obj) { controls.style.display = 'none'; return; }
+
+        const wrapper = document.querySelector('.canvas-wrapper');
+        if (controls.parentElement !== wrapper) { wrapper.appendChild(controls); }
+
+        const objRect = obj.getBoundingRect();
+        
+        // 1. 인쇄영역의 현재 위치 (px)
+        const area = printAreas[currentView];
+        const canvasOffsetLeft = (parseFloat(area.left) / 100) * 600;
+        const canvasOffsetTop = (parseFloat(area.top) / 100) * 700;
+
+        // 2. 버튼 위치 계산 (객체 정중앙 위)
+        // 객체 top + 캔버스 top - 버튼 높이(약 45px)
+        let topPos = canvasOffsetTop + objRect.top - 45;
+        // 객체 left + 캔버스 left + (객체너비 절반) - (버튼너비 절반)
+        let leftPos = canvasOffsetLeft + objRect.left + (objRect.width / 2) - (controls.offsetWidth / 2);
+
+        // 3. 화면 밖으로 나가면 아래로 내리기
+        if (topPos < 0) { 
+            topPos = canvasOffsetTop + objRect.top + objRect.height + 10; 
+        }
+
+        controls.style.top = topPos + 'px';
+        controls.style.left = leftPos + 'px';
+        controls.style.display = 'flex';
+        controls.style.justifyContent = 'center';
+
+        // 버튼 표시 관리
+        const btnAI = controls.querySelector('.ai-btn');
+        const btnRestore = controls.querySelector('.restore-btn');
+        
+        if (obj.type === 'image') {
+            if (obj._originalSrc) {
+                btnRestore.style.display = 'inline-block';
+                btnAI.style.display = 'none';
+            } else {
+                btnAI.style.display = 'inline-block';
+                btnRestore.style.display = 'none';
+            }
+        } else {
+            btnAI.style.display = 'none';
+            btnRestore.style.display = 'none';
+        }
+    }
+
+    function updateTools() {
+        const obj = canvas.getActiveObject();
+        if (obj && (obj.type === 'text' || obj.type === 'i-text')) {
+            document.getElementById('text-color').value = obj.fill;
+            const select = document.getElementById('font-select');
+            for (let i = 0; i < select.options.length; i++) {
+                if (select.options[i].value.includes(obj.fontFamily)) {
+                    select.selectedIndex = i;
+                    break;
+                }
+            }
+        }
+    }
+
+    function changeView(v) {
+        designStates[currentView] = JSON.stringify(canvas.toJSON(['_originalSrc']));
+        currentView = v; updateCanvasImages();
+        
+        const area = printAreas[v];
+        const wrapper = document.getElementById('print-area-wrapper');
+        wrapper.style.top = area.top; wrapper.style.left = area.left;
+        wrapper.style.width = area.width; wrapper.style.height = area.height;
+        
+        canvas.setDimensions({width: wrapper.clientWidth, height: wrapper.clientHeight});
+        canvas.clear();
+        
+        if(designStates[v]) canvas.loadFromJSON(designStates[v], () => { canvas.renderAll(); calculateTotal(); });
+        
+        document.querySelectorAll('.view-btn').forEach(b => b.classList.remove('active'));
+        document.querySelector(`.view-btn[onclick="changeView('${v}')"]`).classList.add('active');
+    }
 
     function updateCanvasImages() {
         const set = productData[currentColor] || productData['default'];
-        const url = set[currentView];
-        if(url) {
-            $('#shirt-img').attr('src', url);
-            $('#shirt-img').attr('crossOrigin', 'Anonymous');
-        }
-        if($('#thumb-front').length) {
-            ['front','back','left','right'].forEach(v => $(`#thumb-${v}`).attr('src', set[v]));
+        if(set[currentView]) document.getElementById('shirt-img').src = set[currentView];
+        if(document.getElementById('thumb-front')) {
+            ['front','back','left','right'].forEach(v => document.getElementById(`thumb-${v}`).src = set[v]);
         }
     }
-    
-    function changeView(v) {
-        viewObjects[currentView] = $('#print-area').html();
-        currentView = v; 
-        updateCanvasImages();
-        const area = printAreas[v];
-        $('#print-area').css({top:area.top, left:area.left, width:area.width, height:area.height}).html(viewObjects[v] || '');
-        $('.view-btn').removeClass('active');
-        $(`.view-btn[onclick="changeView('${v}')"]`).addClass('active');
-        reattachEvents();
+
+    function addSticker(url) {
+        fabric.Image.fromURL(url, (img) => {
+            img.scaleToWidth(150);
+            canvas.add(img);
+            canvas.centerObject(img);
+            canvas.setActiveObject(img);
+        }, { crossOrigin: 'anonymous' });
     }
 
-    // AI 이미지 리사이징
-    function resizeImage(src, maxWidth, callback) {
-        const img = new Image();
-        img.crossOrigin = "Anonymous";
-        img.src = src;
-        img.onload = function() {
-            const canvas = document.createElement('canvas');
-            let w = img.width, h = img.height;
-            if (w > maxWidth) { h *= maxWidth / w; w = maxWidth; }
-            canvas.width = w; canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
-            callback(canvas.toDataURL('image/png'));
-        };
-    }
-
-    // ★ [수정] 디자인 요소 생성 (AI 배경제거 <-> 원본 복구 기능 추가)
-// [shop.html] createDesignElement 함수 교체
-
-// [shop.html] createDesignElement 함수 (전체 교체)
-
-    function createDesignElement(type, content, meta, opt={}) {
-        // 1. 디자인 요소 박스 생성
-        const div = document.createElement('div');
-        div.className = 'design-obj';
-        div.style.cssText = 'position:absolute; top:20%; left:20%; width:150px;';
-        div.dataset.type = type;
-        
-        // 2. 컨트롤 버튼 박스 생성
-        const controls = document.createElement('div'); 
-        controls.className = 'obj-controls';
-        
-        // [삭제 버튼] 생성 (기능은 아래에서 연결)
-        const btnDel = document.createElement('button'); 
-        btnDel.className = 'btn-mini red btn-delete'; 
-        btnDel.innerText = '삭제';
-        
-        if(type === 'img') {
-            const img = document.createElement('img'); 
-            img.src = content; 
-            img.style.width = '100%'; 
-            img.crossOrigin = "Anonymous";
-            img.dataset.original = content; // 원본 주소 저장
-            
-            div.appendChild(img);
-            
-            // [누끼 제거 버튼] 생성
-            const btnAI = document.createElement('button');
-            btnAI.className = 'btn-mini ai btn-ai-remove';
-            btnAI.innerText = '누끼 제거';
-            
-            // [원본 복구 버튼] 생성
-            const btnRestore = document.createElement('button');
-            btnRestore.className = 'btn-mini restore btn-restore';
-            btnRestore.innerText = '원본 복구';
-            btnRestore.style.display = 'none'; // 처음엔 숨김
-
-            controls.appendChild(btnAI);
-            controls.appendChild(btnRestore);
-        } else {
-            const span = document.createElement('span'); 
-            span.innerText = content; 
-            span.style.fontFamily = opt.font || 'sans-serif'; 
-            span.style.color = opt.color || '#000'; 
-            span.style.fontSize = '30px'; 
-            span.style.fontWeight = 'bold';
-            div.appendChild(span);
-        }
-        
-        controls.appendChild(btnDel); 
-        div.appendChild(controls);
-        
-        // 화면에 추가
-        document.getElementById('print-area').appendChild(div);
-        
-        // 드래그 기능 등 재연결
-        reattachEvents(); 
-        calculateTotal();
-    }
-        
-    function addText() { 
-        const t=$('#custom-text').val(); if(!t.trim()) return;
-        createDesignElement('text', t, null, {font:$('#font-select').val(), color:$('#text-color').val()}); 
-        $('#custom-text').val('');
-    }
-
-    function reattachEvents() { 
-        $('.design-obj').draggable({containment:'parent', stop:calculateTotal}).resizable({containment:'parent', aspectRatio:true, stop:calculateTotal}); 
-    }
-    
-    function calculateTotal() {
-        let qty=0, base=0;
-        $('.size-qty').each(function() { 
-            const q=parseInt($(this).val())||0; 
-            qty+=q; 
-            base+=q*(basePrice + parseInt($(this).data('cost'))); 
+    function addText() {
+        const input = document.getElementById('custom-text');
+        const text = new fabric.Text(input.value || 'TEXT', {
+            left: 100, top: 100, fontSize: 40, 
+            fill: document.getElementById('text-color').value,
+            fontFamily: 'Noto Sans KR'
         });
-        let printCost = 0;
-        const objs = document.querySelectorAll('.design-obj');
-        if(objs.length > 0) {
-            objs.forEach(obj => {
-                const w = parseFloat(obj.style.width) || 150;
-                if(w < 100) printCost += 3000; else if(w < 250) printCost += 5000; else printCost += 8000;
+        canvas.add(text);
+        canvas.centerObject(text);
+        canvas.setActiveObject(text);
+        input.value = '';
+    }
+
+    function runDelete() { 
+        const obj = canvas.getActiveObject(); 
+        if(obj) { canvas.remove(obj); document.getElementById('obj-controls').style.display = 'none'; calculateTotal(); }
+    }
+
+    // ★ [해결 3] AI 누끼 후 크기 유지 로직
+    function runAI() {
+        const obj = canvas.getActiveObject();
+        if (!obj || obj.type !== 'image') return;
+        
+        const btn = document.querySelector('.ai-btn'); 
+        const originalText = btn.innerText;
+        btn.innerText = '처리중..'; btn.disabled = true;
+        
+        // 현재 보이는 너비/높이 저장 (이 크기로 다시 맞출 예정)
+        const currentWidth = obj.getScaledWidth();
+        
+        if(!obj._originalSrc) obj._originalSrc = obj.toDataURL();
+        const img = new Image(); img.src = obj.toDataURL();
+        
+        img.onload = () => {
+            const c = document.createElement('canvas');
+            const scale = Math.min(1, 800/img.width);
+            c.width = img.width*scale; c.height = img.height*scale;
+            c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+            
+            fetch("/remove_background_ai/", {
+                method: 'POST', body: JSON.stringify({image: c.toDataURL()}),
+                headers: {'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}'}
+            })
+            .then(r => r.json())
+            .then(d => {
+                if(d.status === 'success') {
+                    obj.setSrc(d.image, () => { 
+                        // ★ 원래 보던 크기로 복구
+                        obj.scaleToWidth(currentWidth);
+                        canvas.renderAll(); 
+                        
+                        btn.style.display = 'none'; 
+                        document.querySelector('.restore-btn').style.display = 'inline-block'; 
+                    });
+                } else {
+                    alert(d.message);
+                }
+            })
+            .finally(() => { btn.innerText = originalText; btn.disabled = false; });
+        }
+    }
+
+    function runRestore() {
+        const obj = canvas.getActiveObject();
+        if(obj && obj._originalSrc) {
+            // 복구할 때도 크기 유지 시도
+            const currentWidth = obj.getScaledWidth();
+            obj.setSrc(obj._originalSrc, () => { 
+                obj.scaleToWidth(currentWidth);
+                canvas.renderAll(); 
+                document.querySelector('.ai-btn').style.display = 'inline-block'; 
+                document.querySelector('.restore-btn').style.display = 'none'; 
             });
         }
-        const total = base + (printCost * qty);
-        $('#total-price-display').text(total.toLocaleString()+'원');
-        $('#form-total-qty').val(qty); $('#form-total-price').val(total);
-        let det = []; $('.size-qty').each(function(){ if($(this).val()>0) det.push($(this).data('size')+':'+$(this).val()); });
-        $('#form-size-detail').val(det.join(', '));
     }
 
-    // ★ [수정] 전체 뷰 위치 100% 일치시키는 함수 (Phantom Scaling)
-    function openPreviewModal() { 
-        // 1. 현재 작업 저장
-        viewObjects[currentView] = $('#print-area').html();
+    // ★ [해결 5] 사이즈 책정 로직 개선 (getBoundingRect 사용)
+// [수정된 가격 계산 로직] 면적 비례(S/M/L) + 개수 추가 요금(+1000원)
+    function calculateTotal() {
+        // 1. 현재 작업 상태 저장
+        designStates[currentView] = JSON.stringify(canvas.toJSON());
         
+        // 2. 옷 기본 가격 + 수량 합산
+        let qty = 0; 
+        let baseTotal = 0;
+        document.querySelectorAll('.size-qty').forEach(el => { 
+            const q = parseInt(el.value) || 0; 
+            qty += q; 
+            baseTotal += q * basePrice; 
+        });
+
+        // 3. 인쇄비 계산 (면적 + 개수)
+        let totalPrintCost = 0; 
+        let details = [];
+
+        ['front', 'back', 'left', 'right'].forEach(v => {
+            if (!designStates[v]) return;
+            
+            // 저장된 데이터 파싱
+            const json = JSON.parse(designStates[v]);
+            const objCount = json.objects.length; // 요소(로고/글자) 개수 확인
+            
+            if (objCount === 0) return; // 디자인 없으면 패스
+            
+            // (A) 면적 계산 (Bounding Box)
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+            json.objects.forEach(o => {
+                const w = o.width * o.scaleX;
+                const h = o.height * o.scaleY;
+                const l = o.left;
+                const t = o.top;
+                
+                if (l < minX) minX = l;
+                if (t < minY) minY = t;
+                if (l + w > maxX) maxX = l + w;
+                if (t + h > maxY) maxY = t + h;
+            });
+
+            // cm 변환 (PX_PER_CM = 12)
+            const widthCm = (maxX - minX) / PX_PER_CM;
+            const heightCm = (maxY - minY) / PX_PER_CM;
+            const maxSide = Math.max(widthCm, heightCm);
+            
+            // (B) 기본 면적 가격 책정
+            let baseCost = 0;
+            let sizeLabel = "";
+            if (maxSide <= 12) { baseCost = PRICE_S; sizeLabel = "소형"; }      // 2300
+            else if (maxSide <= 25) { baseCost = PRICE_M; sizeLabel = "중형"; } // 4400
+            else { baseCost = PRICE_L; sizeLabel = "대형"; }                    // 5500
+            
+            // (C) 개수 추가 요금 계산 (2개째부터 개당 1,000원 추가)
+            let extraCost = 0;
+            if (objCount > 1) {
+                extraCost = (objCount - 1) * 1000;
+            }
+
+            // 해당 면의 최종 인쇄비
+            const viewTotal = baseCost + extraCost;
+            totalPrintCost += viewTotal;
+            
+            // 상세 내역 기록 (예: [앞면] 소형(2300) + 추가1개(1000) = 3300원)
+            let detailStr = `[${v}] ${sizeLabel}(${baseCost.toLocaleString()}원)`;
+            if (extraCost > 0) {
+                detailStr += ` + 추가${objCount-1}건(${extraCost.toLocaleString()}원)`;
+            }
+            details.push(detailStr);
+        });
+
+        // 4. 최종 합계 (옷가격 + (인쇄비 * 수량))
+        // 주의: 인쇄비는 옷 1벌당 가격이므로 수량을 곱해야 함
+        const finalTotal = baseTotal + (totalPrintCost * qty);
+        
+        // 5. 화면 및 폼 업데이트
+        document.getElementById('total-price-display').innerText = finalTotal.toLocaleString() + '원';
+        document.getElementById('form-total-qty').value = qty; 
+        document.getElementById('form-total-price').value = finalTotal;
+        document.getElementById('form-tech-pack').value = details.join('\n');
+    }
+
+    function openPreviewModal() { 
+        designStates[currentView] = JSON.stringify(canvas.toJSON());
         const set = productData[currentColor] || productData['default'];
         const views = ['front', 'back', 'left', 'right'];
         
-        // 모달 띄우기 (먼저 띄워야 크기 계산 가능)
         const modal = new bootstrap.Modal(document.getElementById('previewModal'));
         modal.show();
 
-        // 모달이 렌더링된 직후 실행
         setTimeout(() => {
             views.forEach(v => {
-                // 이미지 설정
-                $(`#prev-img-${v}`).attr('src', set[v]);
-                
-                // 미리보기 래퍼(부모) 찾기
-                const $wrapper = $(`#prev-img-${v}`).parent();
-                
-                // 기존에 만들어둔 스케일러가 있다면 제거 (중복 방지)
-                $wrapper.find('.preview-scaler').remove();
-                
-                // ★ 핵심: 가상의 600x700 편집화면(Scaler)을 만들어서 끼워넣음
-                const $scaler = $('<div class="preview-scaler"></div>');
-                
-                // 축소 비율 계산 (현재 모달 박스 너비 / 원본 600px)
-                const currentWidth = $wrapper.width();
-                const scaleRatio = currentWidth / 600;
-                
-                $scaler.css('transform', `scale(${scaleRatio})`); // 비율대로 축소
-                
-                // 인쇄 영역(print-area) 복제해서 스케일러 안에 넣기
-                const $printAreaClone = $('<div></div>');
-                const config = printAreas[v]; // 원래 좌표 설정 가져오기
-                
-                $printAreaClone.css({
-                    'position': 'absolute',
-                    'top': config.top,
-                    'left': config.left,
-                    'width': config.width,
-                    'height': config.height,
-                    'border': 'none' // 테두리 제거
-                });
-                
-                // 저장된 디자인(로고) 내용 넣기
-                $printAreaClone.html(viewObjects[v] || '');
-                
-                // 스케일러에 추가 -> 래퍼에 추가
-                $scaler.append($printAreaClone);
-                $wrapper.append($scaler);
-                
-                // 모달 내부 컨트롤 제거
-                $scaler.find('.obj-controls').remove();
-                $scaler.find('.design-obj').css({border:'none'});
+                document.getElementById(`prev-img-${v}`).src = set[v];
+                const wrapper = document.getElementById(`prev-img-${v}`).parentElement;
+                const old = wrapper.querySelector('.preview-design-layer');
+                if(old) old.remove();
+
+                if(designStates[v]) {
+                    const area = printAreas[v];
+                    const c = document.createElement('canvas');
+                    const wVal = parseFloat(area.width)/100;
+                    const hVal = parseFloat(area.height)/100;
+                    c.width = 600 * wVal; c.height = 700 * hVal;
+                    
+                    const fc = new fabric.Canvas(c);
+                    fc.loadFromJSON(designStates[v], () => {
+                        fc.renderAll();
+                        const img = document.createElement('img');
+                        img.className = 'preview-design-layer';
+                        img.src = fc.toDataURL();
+                        img.style.position = 'absolute';
+                        img.style.top = area.top; img.style.left = area.left;
+                        img.style.width = area.width; img.style.height = area.height;
+                        img.style.pointerEvents = 'none';
+                        wrapper.appendChild(img);
+                    });
+                }
             });
-        }, 200); // 모달 뜨는 애니메이션 기다림 (0.2초)
-    }
-    
-    function calculateTechPack() {
-        viewObjects[currentView] = $('#print-area').html();
-        let report = "";
-        const REAL_W = 50; const BOX_W = 600;
-        
-        ['front','back','left','right'].forEach(v => {
-            const html = viewObjects[v];
-            if(!html || !html.includes('design-obj')) return;
-            report += `[${v.toUpperCase()}]\n`;
-            const temp = document.createElement('div');
-            temp.innerHTML = html;
-            document.body.appendChild(temp);
-            const objs = temp.querySelectorAll('.design-obj');
-            objs.forEach((obj, i) => {
-                const type = obj.dataset.type === 'img' ? '이미지' : '텍스트';
-                const wPx = parseFloat(obj.style.width) || 150;
-                const wCm = (wPx / BOX_W) * REAL_W;
-                report += `${i+1}. ${type}: 가로 약 ${wCm.toFixed(1)}cm\n`;
-            });
-            document.body.removeChild(temp);
-        });
-        if(report === "") report = "무지 (인쇄 없음)";
-        $('#form-tech-pack').val(report);
+        }, 200);
     }
 
-// ★ [범용 함수] 어떤 이미지 주소를 넣든 캔버스에 추가해주는 함수
-// ★ 스티커 추가 함수 (이게 있어야 작동합니다!)
-// [shop.html] 하단 스크립트의 addSticker 함수 교체
-
-    function addSticker(imgUrl) {
-        // 1. 이미지 경로 확인 (디버깅용 로그)
-        console.log("스티커 추가:", imgUrl);
-
-        // 2. 기존에 잘 작동하는 'createDesignElement' 함수를 재활용합니다.
-        // 'img' 타입으로 주소를 넘겨주면 알아서 옷 위에 올려줍니다.
-        // {width: 150} 은 스티커의 초기 크기입니다.
-        createDesignElement('img', imgUrl, null, {width: 150}); 
+    function requestPay() {
+        document.getElementById('quote-form').submit();
     }
+</script>
 
-    // (추가) 수량 변경 시 총 금액 계산 함수
-    $(document).on('input', '.quantity-input', function() {
-        var totalQty = 0;
-        var price = {{ product.price }}; // 상품 기본 가격
-        
-        $('.quantity-input').each(function() {
-            totalQty += parseInt($(this).val()) || 0;
-        });
-
-        $('#total-qty').text(totalQty);
-        $('#total-price').text((totalQty * price).toLocaleString());
-    });
-    </script>
 
 <hr class="my-5 border-secondary">
 

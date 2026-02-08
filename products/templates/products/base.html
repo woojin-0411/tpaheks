@@ -11,7 +11,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-        /* [폰트 설정] 요청하신 이전 스타일 복구 */
+        /* 폰트 설정 */
         @font-face {
             font-family: 'GmarketSansBold';
             src: url('https://cdn.jsdelivr.net/gh/projectnoonnu/noonfonts_2001@1.1/GmarketSansBold.woff') format('woff');
@@ -22,67 +22,22 @@
         body {
             font-family: 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Helvetica Neue', 'Segoe UI', 'Apple SD Gothic Neo', 'Malgun Gothic', 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', sans-serif;
             color: #222;
-            padding-top: 80px; /* 고정 메뉴바 공간 확보 */
+            padding-top: 80px;
         }
 
-        /* 포인트 폰트 (로고, 제목용) */
-        .font-heavy {
-            font-family: 'GmarketSansBold', sans-serif;
-        }
-
-        /* 색상 유틸리티 */
+        .font-heavy { font-family: 'GmarketSansBold', sans-serif; }
         .text-orange { color: #ff6b00 !important; }
         .bg-orange { background-color: #ff6b00 !important; }
-        
-        /* [네비게이션 바] 스타일 */
+
+        /* [네비게이션 바] */
         .navbar {
             background-color: white;
             box-shadow: 0 2px 10px rgba(0,0,0,0.05);
             padding: 15px 0;
         }
-        
-        /* 로고 스타일 */
-        .navbar-brand {
-            font-size: 1.8rem;
-            color: #222;
-            letter-spacing: -1px;
-        }
+        .navbar-brand { font-size: 1.8rem; color: #222; letter-spacing: -1px; }
 
-        /* 메뉴 아이템 스타일 (중앙 정렬용) */
-        .navbar-nav .nav-link {
-            font-size: 1.05rem;
-            font-weight: bold;
-            color: #444 !important;
-            margin: 0 15px;
-            transition: 0.2s;
-            position: relative;
-        }
-        
-        /* 마우스 오버 효과 */
-        .navbar-nav .nav-link:hover,
-        .navbar-nav .nav-link.active {
-            color: #ff6b00 !important;
-        }
-        
-        /* 밑줄 애니메이션 */
-        .navbar-nav .nav-link::after {
-            content: '';
-            position: absolute;
-            width: 0;
-            height: 3px;
-            bottom: -5px;
-            left: 50%;
-            background-color: #ff6b00;
-            transition: all 0.3s ease-in-out;
-            transform: translateX(-50%);
-            border-radius: 2px;
-        }
-        .navbar-nav .nav-link:hover::after,
-        .navbar-nav .nav-link.active::after {
-            width: 100%;
-        }
-
-        /* 햄버거 버튼 스타일 */
+        /* 햄버거 버튼 */
         .navbar-toggler { border: none; padding: 0; outline: none !important; box-shadow: none !important; }
         .hamburger-icon { width: 30px; height: 24px; position: relative; cursor: pointer; }
         .hamburger-icon span {
@@ -92,29 +47,126 @@
         .hamburger-icon span:nth-child(1) { top: 0px; }
         .hamburger-icon span:nth-child(2) { top: 10px; }
         .hamburger-icon span:nth-child(3) { top: 20px; }
-        
-        /* 햄버거 클릭 애니메이션 */
         .navbar-toggler[aria-expanded="true"] .hamburger-icon span:nth-child(1) { top: 10px; transform: rotate(135deg); }
         .navbar-toggler[aria-expanded="true"] .hamburger-icon span:nth-child(2) { opacity: 0; left: -60px; }
         .navbar-toggler[aria-expanded="true"] .hamburger-icon span:nth-child(3) { top: 10px; transform: rotate(-135deg); }
 
-        /* [로그인/회원가입 버튼] 스타일 */
-        .auth-btn {
-            border-radius: 50px;
-            padding: 7px 20px;
-            font-size: 0.9rem;
-            font-weight: bold;
-            text-decoration: none;
-            transition: 0.3s;
-            display: inline-block;
+        /* [메뉴 아이템 스타일] */
+        .nav-link {
+            font-size: 1.05rem; font-weight: bold; color: #444 !important;
+            margin: 0 10px; transition: 0.2s; position: relative;
+            white-space: nowrap; /* 메뉴 글자 줄바꿈 방지 */
         }
-        .btn-login { border: 2px solid #333; color: #333; background: transparent; margin-right: 5px; }
+        .nav-link:hover, .nav-link.active { color: #ff6b00 !important; }
+
+        /* [로그인/회원가입 영역 스타일] */
+        .auth-area {
+            display: flex;
+            align-items: center;
+            gap: 15px; /* 아이콘 사이 간격 */
+        }
+        /* 사용자 이름 텍스트 */
+        .user-name-text {
+            font-weight: bold;
+            font-size: 0.95rem;
+            color: #333;
+            margin-right: 5px;
+        }
+
+        /* 아이콘 버튼 스타일 (배경 없이 깔끔하게) */
+        .icon-btn {
+            background: none;
+            border: none;
+            color: #555; /* 진한 회색 */
+            font-size: 1.3rem; /* 아이콘 크기 */
+            cursor: pointer;
+            padding: 5px;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 마우스 올렸을 때 색상 변경 */
+        .icon-btn:hover {
+            color: #ff6b00; /* 오렌지색 포인트 */
+            transform: scale(1.1); /* 살짝 커짐 */
+        }
+
+        /* 툴팁(설명) 스타일 */
+        .icon-btn i {
+            pointer-events: none; /* 아이콘 자체 클릭 방지 */
+        }
+        .auth-btn {
+            border-radius: 50px; padding: 7px 15px; font-size: 0.9rem; font-weight: bold;
+            text-decoration: none; transition: 0.3s; display: inline-block; white-space: nowrap;
+        }
+        .btn-login { border: 2px solid #333; color: #333; background: transparent; }
         .btn-login:hover { background: #333; color: white; }
         .btn-signup { background: #ff6b00; color: white; border: 2px solid #ff6b00; }
         .btn-signup:hover { background: #e65c00; border-color: #e65c00; }
-        .user-welcome { font-weight: bold; margin-right: 10px; color: #444; }
 
-        /* [카카오톡 문의 버튼] 우측 하단 고정 */
+        /* ★★★ [핵심 수정] 반응형 처리 (PC vs 모바일 분리) ★★★ */
+        
+        /* 1. PC 화면 (992px 이상) */
+        @media (min-width: 992px) {
+            .navbar-nav {
+                flex-direction: row; /* 가로 정렬 */
+                align-items: center;
+                flex-wrap: nowrap; /* 줄바꿈 금지 */
+            }
+            .auth-area {
+                margin-left: 20px; /* 메뉴와 간격 띄우기 */
+                flex-wrap: nowrap; /* 버튼 줄바꿈 금지 */
+            }
+        }
+
+        /* 2. 모바일/태블릿 화면 (991px 이하 - 햄버거 메뉴 눌렀을 때) */
+        @media (max-width: 991px) {
+            /* 메뉴 박스 디자인 */
+            .navbar-collapse {
+                background: white; padding: 20px; border-radius: 15px;
+                margin-top: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+            }
+            
+            /* 메뉴 세로 정렬 복구 */
+            .navbar-nav {
+                flex-direction: column !important; /* ★ 세로로 강제 변경 */
+                align-items: flex-start;
+                width: 100%;
+            }
+            
+            .nav-item {
+                width: 100%; border-bottom: 1px solid #f1f1f1;
+            }
+            
+            .nav-link {
+                display: block; width: 100%; padding: 12px 0; margin: 0;
+            }
+
+            /* 로그인 영역 모바일 디자인 */
+            .auth-area {
+                margin-top: 20px;
+                padding-top: 20px;
+                border-top: 2px solid #eee;
+                width: 100%;
+                justify-content: center; /* 가운데 정렬 */
+                flex-wrap: wrap; /* 모바일에선 버튼이 많으면 줄바꿈 허용 */
+            }
+            
+            /* 모바일에서 '000님' 글자 크기 조정 */
+            .auth-area span {
+                display: block; width: 100%; text-align: center; margin-bottom: 10px;
+            }
+        }
+
+        /* 3. 아주 작은 화면 (폰트 깨짐 방지용 축소) */
+        @media (max-width: 400px) {
+            .auth-btn { font-size: 0.8rem; padding: 5px 10px; }
+            .navbar-brand { font-size: 1.5rem; }
+        }
+
+        /* 카톡 버튼 */
         .kakao-float-btn {
             position: fixed; bottom: 30px; right: 30px; width: 60px; height: 60px;
             background-color: #FEE500; border-radius: 50%;
@@ -124,29 +176,6 @@
         }
         .kakao-float-btn:hover { transform: scale(1.1) rotate(10deg); }
         .kakao-icon { color: #3A1D1D; font-size: 30px; }
-        
-        .navbar-nav .nav-link, .navbar a {
-            white-space: nowrap; /* 글자가 길어도 절대 줄바꿈 하지 않음 */
-        }
-
-        /* 모바일 메뉴 박스 디자인 */
-        @media (max-width: 991px) {
-            .navbar-collapse {
-                background: white; padding: 20px; border-radius: 15px;
-                margin-top: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-            }
-            .nav-link { margin: 5px 0; }
-            .auth-area { margin-top: 20px; text-align: center; border-top: 1px solid #eee; padding-top: 20px; }
-        }
-
-        @media (max-width: 1200px) {
-            .navbar-nav .nav-link {
-                font-size: 0.9rem; /* 원래보다 작게 */
-                padding-left: 8px !important;  /* 좌우 여백 줄이기 */
-                padding-right: 8px !important;
-            }
-        }        
-
     </style>
 </head>
 <body class="d-flex flex-column min-vh-100">
@@ -250,26 +279,30 @@
 
                 <div class="auth-area d-flex align-items-center gap-2">
                     {% if user.is_authenticated %}
-                        <span class="text-dark me-2 fw-bold">👋 {{ user.username }}님</span>
-                        
-                        <a href="{% url 'products:order_check' %}" class="btn btn-outline-dark btn-sm rounded-pill px-3">
-                            <i class="fas fa-user me-1"></i> 마이페이지
+                        <span class="user-welcome-text">
+                            👋 {{ user.username }}님
+                        </span>
+
+                        <a href="{% url 'products:order_check' %}" class="icon-btn" title="마이페이지">
+                            <i class="fas fa-user-circle"></i>
                         </a>
-                        
-                        <form method="post" action="{% url 'account_logout' %}" style="display:inline;">
+
+                        <form method="post" action="{% url 'account_logout' %}" style="display:inline; margin:0;">
                             {% csrf_token %}
-                            <button type="submit" class="btn btn-danger btn-sm rounded-pill px-3">
-                                로그아웃
+                            <button type="submit" class="icon-btn" title="로그아웃">
+                                <i class="fas fa-sign-out-alt"></i>
                             </button>
                         </form>
 
                     {% else %}
-                        <a href="{% url 'account_login' %}" class="btn btn-dark btn-sm rounded-pill px-3">
-                            로그인
-                        </a>
-                        <a href="{% url 'account_signup' %}" class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold">
-                            회원가입
-                        </a>
+                        <div style="display:flex; gap:5px;">
+                            <a href="{% url 'account_login' %}" class="btn btn-dark btn-sm rounded-pill px-3" style="white-space:nowrap;">
+                                로그인
+                            </a>
+                            <a href="{% url 'account_signup' %}" class="btn btn-outline-dark btn-sm rounded-pill px-3 fw-bold" style="white-space:nowrap;">
+                                회원가입
+                            </a>
+                        </div>
                     {% endif %}
                 </div>
             </div>
